@@ -1,9 +1,6 @@
 # DebuggersEats – Restaurant Management Platform
 
-> **Nota**: Este proyecto fue desarrollado con fines académicos como parte del curso IN6AM.
-Está basado en un trabajo con nombre "Kinal Sports" desarrollado por Braulio Echeverría para el curso IN6AM - Kinal Guatemala. Se realizaron modificaciones con fines educativos.
-
-Este forma parte de una arquitectura de microservicios diseñada para la gestión integral de restaurantes mediante tecnologías modernas como Node.js, MongoDB y PostgreSQL.
+> **Nota**: Este proyecto fue desarrollado con fines académicos como parte del curso IN6AM. Forma parte de una arquitectura de microservicios diseñada para la gestión integral de restaurantes mediante tecnologías modernas como Node.js, MongoDB y PostgreSQL.
 
 ---
 
@@ -186,7 +183,7 @@ El sistema implementa:
 
 # Endpoints Principales
 
-Base URL: http://localhost:3000/bank/v1
+Base URL: http://localhost:3000/debuggersEatsAdmin/v1
 
 
 
@@ -195,9 +192,12 @@ Base URL: http://localhost:3000/bank/v1
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| POST | /auth/register | Registro de usuario |
-| POST | /auth/login | Inicio de sesión |
-| GET | /auth/profile | Obtener perfil |
+| GET | /actívate/:token | Activa la cuenta del usuario mediante el token enviado por correo. |
+| POST | /login | Permite al usuario iniciar sesión con email y contraseña |
+| POST | /forgot-password | Envía un correo con toen para restablecer la contraseña. |
+| POST | /reset-password/:token | Permite establecer una nueva contraseña usando el token recibido. |
+| POST | / | Permite a un administrador crear nuevos usuarios. |
+| PUT | /change-password | Permite cambiar la contraseña del usuario autenticado. |
 
 ## Restaurant Service
 
@@ -218,18 +218,29 @@ Base URL: http://localhost:3000/bank/v1
 - MongoDB
 - PostgreSQL
 - npm o yarn
----
-
-##
-## Licencia
-
-Este proyecto está licenciado bajo la Licencia MIT. Consulte el archivo [LICENSE](LICENSE) para más detalles.
-
-## Autor
-
-**Los Debuggers**  
-Curso IN6AM - Kinal Guatemala 2026
 
 ---
+configurar variables de entornp
+## 1. Instalar dependencias
 
-**Nota**: Este proyecto fue desarrollado con fines académicos como parte del proceso de aprendizaje sobre arquitectura de microservicios. No se recomienda su uso en entornos de producción sin realizar previamente las validaciones, pruebas y auditorías de seguridad correspondientes.
+```bash
+npm install
+
+---
+# Créditos
+
+Proyecto base desarrollado por: Debuggers - Kinal Guatemala 2026
+Repositorio Original: https://github.com/egomez-2021272/DebuggersEats.git
+Este proyecto fue utilizado como referencia académica y posteriormente adaptado y modificado.
+También se tomó como referencia información que viene de las siguientes fuentes:
+
+- Hashing de Contraseñas (@node-rs/bcrypt)
+Documentación oficial: https://github.com/napi-rs/node-rs
+Estándar OWASP: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+-Nodemailer
+Documentación oficial: https://nodemailer.com/
+Gmail SMTP: https://nodemailer.com/usage/using-gmail/
+Guía de App Passwords: https://support.google.com/accounts/answer/185833
+- Reset de Contraseña
+OWASP Authentication Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+NIST Digital Identity Guidelines: https://pages.nist.gov/800-63-3/
