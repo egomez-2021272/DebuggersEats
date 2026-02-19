@@ -40,9 +40,6 @@ export const errorHandler = (err, req, res, next) => { // Añadido 'next'
   }
 
 
-
-
-
   if (err.statusCode) {
     return res.status(err.statusCode).json({
       success: false,

@@ -33,7 +33,7 @@ export const initServer = async () => {
         middlewares(app);
         routes(app);
         app.use(errorHandler);
-        app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     } catch (err) {
         console.error(`Error al iniciar el servidor: ${err.message}`);
         process.exit(1);
