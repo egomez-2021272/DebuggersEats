@@ -160,7 +160,7 @@ Tecnología:
 
 ### PostgreSQL
 
-Preparado para futuras integraciones relacionadas con operaciones transaccionales
+Preparado para futuras integraciones relacionadas con operaciones transaccionales.
 
 Tecnología:
 
