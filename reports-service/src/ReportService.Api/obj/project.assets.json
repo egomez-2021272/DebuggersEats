@@ -2998,19 +2998,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\rgome\\.nuget\\packages\\": {}
+    "C:\\Users\\mzaba\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\rgome\\Desktop\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+      "projectUniqueName": "C:\\Users\\mzaba\\OneDrive\\Documentos\\IN6AM\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
       "projectName": "ReportService.Api",
-      "projectPath": "C:\\Users\\rgome\\Desktop\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
-      "packagesPath": "C:\\Users\\rgome\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\rgome\\Desktop\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
+      "projectPath": "C:\\Users\\mzaba\\OneDrive\\Documentos\\IN6AM\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+      "packagesPath": "C:\\Users\\mzaba\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\mzaba\\OneDrive\\Documentos\\IN6AM\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\rgome\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\mzaba\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
