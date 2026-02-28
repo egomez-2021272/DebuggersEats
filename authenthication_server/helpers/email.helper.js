@@ -15,7 +15,7 @@ const createTransporter = () => {
 };
 
 export const sendActivationEmail = async (email, token, firstName) => {
-    const activationLink = `${process.env.FRONTEND_URL || 'http://localhost:3007/debuggersEatsAdmin/v1/auth'}/activate/${token}`;
+    const activationLink = `${process.env.FRONTEND_URL || 'http://localhost:3013/debuggersEatsAdmin/v1/auth'}/activate/${token}`;
     
     const mailOptions = {
         from: process.env.EMAIL_USER,
