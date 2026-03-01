@@ -16,37 +16,7 @@ Actualmente, el sistema cuenta con los siguientes servicios principales:
 
 - Authentication Service
 - Restaurant Service
-- .NetReportService
-
----
-
-## Report Service
-Descripción: El Report Service es el encargado de generar estadísticas y reportes de rendimiento de la plataforma DebuggersEats.
-Este servicio está construido en .NET 8 y actúa como un servicio de solo lectura — no modifica datos, únicamente los consulta y procesa. Se conecta a MongoDB para leer los pedidos confirmados y calcula métricas como ingresos totales, platos más vendidos y horas pico de actividad.
-
-Para optimizar el rendimiento, los resultados calculados se almacenan en caché en PostgreSQL con un TTL de 1 hora. Si el caché existe y no ha expirado, se devuelve directamente sin recalcular desde MongoDB.
-
-## Funcionalidades Principales
-- Reportes por Restaurante
-- Ingresos totales del restaurante
-- Número total de pedidos procesados
-- Platos más vendidos con cantidad e ingresos generados
-- Horas pico de mayor actividad
-- Reportes Globales de Plataforma
-- Estadísticas consolidadas de todos los restaurantes
-- Resumen general de pedidos e ingresos de toda la plataforma
-
-## Sistema de Caché
-Resultados almacenados en PostgreSQL con TTL de 1 hora
-La respuesta indica si los datos vienen de caché ("fuente": "cache") o fueron calculados en tiempo real ("fuente": "calculado")
-Endpoint para limpiar caché y forzar recálculo inmediato
-
-## Arquitectura del Servicio
-El servicio está organizado en:
-- API: Controladores REST con Entity Framework Core
-- Application: Lógica de cálculo de métricas y gestión de caché
-- Domain: Entidades de reporte y caché
-- Persistence: MongoDB (lectura de pedidos) + PostgreSQL (escritura de caché)
+- ReportService (.NET 8)
 
 ---
 
@@ -87,9 +57,9 @@ También actúa como el núcleo de seguridad del sistema, ya que valida la ident
 
 El sistema maneja los siguientes roles:
 
-- **Administrador del sistema**
-- **Administrador de restaurante**
-- **Cliente**
+- **Administrador del sistema** (`ADMIN_ROLE`)
+- **Administrador de restaurante** (`RES_ADMIN_ROLE`)
+- **Cliente** (`USER_ROLE`)
 
 Funcionalidades relacionadas:
 
@@ -166,6 +136,46 @@ El servicio está organizado en:
 
 ---
 
+# Report Service
+
+## Descripción
+El Report Service es el encargado de generar estadísticas y reportes de rendimiento de la plataforma DebuggersEats.
+
+Este servicio está construido en **.NET 8** y actúa como un servicio de solo lectura — no modifica datos, únicamente los consulta y procesa. Se conecta a **MongoDB** para leer los pedidos confirmados y calcula métricas como ingresos totales, platos más vendidos y horas pico de actividad.
+
+Para optimizar el rendimiento, los resultados calculados se almacenan en caché en **PostgreSQL** con un TTL de 1 hora. Si el caché existe y no ha expirado, se devuelve directamente sin recalcular desde MongoDB.
+
+## Funcionalidades Principales
+
+### Reportes por Restaurante
+
+- Ingresos totales del restaurante
+- Número total de pedidos procesados
+- Platos más vendidos con cantidad e ingresos generados
+- Horas pico de mayor actividad
+
+### Reportes Globales de Plataforma
+
+- Estadísticas consolidadas de todos los restaurantes
+- Resumen general de pedidos e ingresos de toda la plataforma
+
+### Sistema de Caché
+
+- Resultados almacenados en PostgreSQL con TTL de 1 hora
+- La respuesta indica si los datos vienen de caché (`"fuente": "cache"`) o fueron calculados en tiempo real (`"fuente": "calculado"`)
+- Endpoint para limpiar caché y forzar recálculo inmediato
+
+### Arquitectura del Servicio
+
+El servicio está organizado en:
+
+- **API**: Controladores REST con Entity Framework Core
+- **Application**: Lógica de cálculo de métricas y gestión de caché
+- **Domain**: Entidades de reporte y caché
+- **Persistence**: MongoDB (lectura de pedidos) + PostgreSQL (escritura de caché)
+
+---
+
 # Tecnologías Utilizadas
 
 ## Backend
@@ -173,6 +183,7 @@ El servicio está organizado en:
 - Node.js
 - Express.js
 - JavaScript
+- C#
 - Clean Architecture
 - Arquitectura de Microservicios
 
@@ -190,12 +201,17 @@ Tecnología:
 - Mongoose ODM
 
 ### PostgreSQL
+Utilizado en: Caché de reportes con TTL
+Tecnología: Entity Framework Core
 
-Preparado para futuras integraciones relacionadas con operaciones transaccionales.
+## Almacenamiento de Imágenes
+- Cloudinary — imágenes de restaurantes y platillos
+- Multer — manejo de uploads temporales
 
-Tecnología:
-
-- Sequelize ORM o Prisma ORM
+## Seguridad
+- JWT Authentication (jsonwebtoken)
+- Hash de contraseñas con bcrypt
+- Validación de datos con express-validator
 
 ---
 
@@ -203,240 +219,209 @@ Tecnología:
 
 El sistema implementa:
 
-- JWT Authentication
+- JWT Authentication con issuer y audience
 - Hash de contraseñas con bcrypt
-- Protección de rutas privadas
-- Validación de roles
-- Validación de datos
+- Protección de rutas privadas por rol
+- Validación de datos de entrada
 - Manejo de errores centralizado
+- Tokens de confirmación para reservaciones (JWT, 24h)
 
 ---
 
 # Endpoints Principales
 
-Base URL: http://localhost:3000/debuggersEatsAdmin/v1
+## Base URLs
 
+| Servicio | URL Base |
+|---|---|
+| Authentication | `http://localhost:3013/debuggersEatsAdmin/v1` |
+| Restaurant | `http://localhost:3014/add-restaurant/v1` |
+| Reports | `http://localhost:5000/api/reports` |
 
-
+---
 
 ## Auth Service
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | /actívate/:token | Activa la cuenta del usuario mediante el token enviado por correo. |
-| POST | /login | Permite al usuario iniciar sesión con email y contraseña |
-| POST | /forgot-password | Envía un correo con toen para restablecer la contraseña. |
-| POST | /reset-password/:token | Permite establecer una nueva contraseña usando el token recibido. |
-| POST | / | Permite a un administrador crear nuevos usuarios. |
-| PUT | /change-password | Permite cambiar la contraseña del usuario autenticado. |
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/health` | Estado del servicio | No |
+| POST | `/auth/login` | Login con username y password, devuelve JWT | No |
+| POST | `/auth/` | Crear usuario | ADMIN_ROLE |
+| GET | `/auth/` | Listar usuarios | ADMIN_ROLE |
+| PUT | `/auth/:id` | Actualizar usuario | ADMIN_ROLE |
+| DELETE | `/auth/:id` | Eliminar usuario | ADMIN_ROLE |
 
-## Restaurant Service
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | /restaurants | Obtener restaurantes |
-| POST | /restaurants | Crear restaurante |
-| PUT | /restaurants/:id | Actualizar restaurante |
-| DELETE | /restaurants/:id | Eliminar restaurante |
-
-## Pedidos
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | /ListMenuByIdRes | Obtiene el menú de un restaurante. |
-| GET | /ViewCart | Muestra el carrito del usuario. |
-| POST | /AddSaurceCart/:id | Agrega un producto al carrito. |
-| PATCH | /UpdateCart/:id |Actualiza un producto del carrito. |
-| DELETE | /DeleteSourceCart/:id | Elimina un producto del carrito. |
-| DELETE | /DeleteAllCart/:id | Vacía el carrito. |
-| POST | /ConfirmOrder/:id | Confirma la orden. |
-| GET | /OrderHistory/:id | Muestra el historial de pedidos. |
-
-## AdminPedidos
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | /ColaPedidos | Obtiene la lista de pedidos pendientes. |
-| GET | /DetailsOrder | Muestra los detalles de un pedido. |
-| PATCH | /OrderStatus/:id | Actualiza el estado de un pedido. |
-| DELETE | /CancelOrder/:id | Cancela un pedido específico. |
-
-### Modelos de Request
-### Estado del pedido: (/auth/OrderStatus)
-
-```bash
+```json
+// Login
 {
-    "status": "Aceptado"
+  "username": "admin",
+  "password": "Admin123!DebuggersEats"
 }
 ```
 
-## Reservation
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | /ReservationAdd | Crea una nueva reserva. |
-| POST | /ConfirmarRes | Confirma una reserva pendiente. |
-| GET | /ListarReservas/:id | Lista las reservas de un usuario. |
-| PUT | /UpdateRerservas/:id | Actualiza una reserva existente. |
-| DELETE | /DeleteReservas/:id | Elimina una reserva. |
-| GET | /CheckDisponibilidad/:id | Verifica disponibilidad para una reserva. |
-| GET | /ViewReservAdmin/:id | Muestra todas las reservas para el administrador. |
-
-### Authorization: Bearer <token>
-### Añadir reservación: (/auth/ReservationAdd)
-
-```bash
- {
-    "reservationDate": "2026-02-28",
-    "reservationHour": "19:30",
-    "peopleName": "Juan Perez",
-    "restaurantName": "Kinalitos",
-    "peopleNumber": 1,
-    "observation": "Mesa en el lado izquierdo para no llamar la atención"
-}
-```
 ---
 
-### Authorization: Bearer <token>
-### Confirmar reservación: (/auth/ConfirmarRes)
-
-```bash
- {
-    "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNlcnZhdGlvbklkIjoiNjlhMjA0YmUyZmVlNjQxNTBjZjdmYjk1IiwicHVycG9zZSI6IlJFU0VSVkFUSU9OX0NPTkZJUk0iLCJpYXQiOjE3NzIyMjU3MjYsImV4cCI6MTc3MjMxMjEyNiwiYXVkIjoiRGVidWdnZXJzRWF0cyIsImlzcyI6IkRlYnVnZ2Vyc0VhdHMifQ.sCEE_z_2xWSjJ1Yzn3Y-tDjGNhXTF5-8uG2VyifMc3s",
-    "action" : "CONFIRMAR"
-}
-```
----
-
-### Authorization: Bearer <token>
-### Listar reservas: (/auth/ListarReservas)
-
-```bash
-{
-    "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNlcnZhdGlvbklkIjoiNjk5ZmRmZmU2OWE1NzJhYmNlYWQ2NTBiIiwicHVycG9zZSI6IlJFU0VSVkFUSU9OX0NPTkZJUk0iLCJpYXQiOjE3NzIwODUyNDYsImV4cCI6MTc3MjE3MTY0NiwiYXVkIjoiRGVidWdnZXJzRWF0cyIsImlzcyI6IkRlYnVnZ2Vyc0VhdHMifQ.iudp3cuzNqsEoiVIOX8Nd1PZfzaeiFfaF7yXoNo3cu8",
-    "action" : "CANCELAR"
-}
-```
----
-
-### Authorization: Bearer <token>
-### Actualizar reservas: (/auth/UpdateRerservas)
-
-```bash
-{
-
-    "reservationDate": "2026-03-20",
-    "reservationHour": "20:00",
-    "peopleNumber": 6
-}
-```
----
-
-### Authorization: Bearer <token>
-### Eliminar reservas: (/auth/DeleteReservas)
-
----
-
-### Authorization: Bearer <token>
-### Verificar disponibilidad: (/auth/CheckDisponibilidad)
-
-```bash
-{
-    "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNlcnZhdGlvbklkIjoiNjlhMTNmYTkyNGI2ZTM0MTcyZmY1M2NlIiwicHVycG9zZSI6IlJFU0VSVkFUSU9OX0NPTkZJUk0iLCJpYXQiOjE3NzIxNzUyNzMsImV4cCI6MTc3MjI2MTY3MywiYXVkIjoiRGVidWdnZXJzRWF0cyIsImlzcyI6IkRlYnVnZ2Vyc0VhdHMifQ.qwhYuHb4T_BWQf-uV6T_fwUQ6k7mq4bYzdluWJOlEWk",
-    "action" : "CANCELAR"
-}
-```
----
-
-### Authorization: Bearer <token>
-### Ver reserva: (/auth/ViewReservAdmin)
-
-```bash
-{
-    "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXNlcnZhdGlvbklkIjoiNjk5ZmRmZmU2OWE1NzJhYmNlYWQ2NTBiIiwicHVycG9zZSI6IlJFU0VSVkFUSU9OX0NPTkZJUk0iLCJpYXQiOjE3NzIwODUyNDYsImV4cCI6MTc3MjE3MTY0NiwiYXVkIjoiRGVidWdnZXJzRWF0cyIsImlzcyI6IkRlYnVnZ2Vyc0VhdHMifQ.iudp3cuzNqsEoiVIOX8Nd1PZfzaeiFfaF7yXoNo3cu8",
-    "action" : "CANCELAR"
-}
-```
----
-
-## GastronomicEvents
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | /NewEvent | Crea un nuevo evento. |
-| GET | /ViewEventId | Muestra los detalles de un evento. |
-| GET | /ViewAllEventRest/:id | Lista los eventos de un restaurante. |
-| POST | /SuscribeEvent/:id | Suscribe un usuario a un evento. |
-| GET | /ViewAllEventAdmin/:id | Lista todos los eventos (admin). |
-| PATCH | /UpdateEvent/:id |  Actualiza un evento. |
-| DELETE | /DeleteEvent/:id | Elimina un evento. |
-| DELETE | /CancelSuscribe/:id | Cancela la suscripción a un evento. |
-| POST | /ApplyCopounPromo/:id | Aplica un cupón promocional. |
-
-### Authorization: Bearer <token>
-### Nuevo Evento: (/auth/NewEvent)
-
-```bash
-{
-    "restaurant_id": "699a134ed5ffb3a15a3baa99",
-    "name": "Cupon ded prueba de % de descuento",
-    "description": "20% de descuento en tu primera orden",
-    "type": "coupon",
-    "status": "active",
-    "max_usos": 5,
-    "schedule": {
-        "start_date": "2026-02-01T00:00:00Z",
-        "end_date": "2026-03-30T23:59:00Z",
-        "recurrence": "none",
-        "days_of_week": [0],
-        "time_slots": []
-    },
-    "visibility": "public",
-    "tags": ["descuento", "cupon"]
-}
-```
----
-
-### Authorization: Bearer <token>
-### Suscribirse a Evento: (/auth/SuscribeEvent)
-
----
-
-### Authorization: Bearer <token>
-### Actualizar Evento: (/auth/UpdateEvent)
-
-```bash
-{
-    "max_usos": 5,
-    "schedule": {
-    "start_date": "2026-02-01T00:00:00Z",
-    "end_date": "2026-06-30T23:59:00Z",
-    "recurrence": "weekly",
-    "days_of_week": [3],
-    "time_slots": [{ "from": "12:00", "to": "22:00" }]
-    }
-}
-```
----
-
-### Authorization: Bearer <token>
-### Eliminar Evento: (/auth/DeleteEvent)
-### Cancelar Suscripción: (/auth/CancelSuscribe)
-
----
-
-## .Net ReportService
+## Restaurants Service
 
 | Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| GET | /health | Estado del servicio. | No |
+|---|---|---|---|
+| GET | `/restaurants/` | Listar restaurantes | No |
+| GET | `/restaurants/:id` | Ver restaurante por ID | No |
+| POST | `/restaurants/` | Crear restaurante (foto opcional, form-data) | ADMIN_ROLE |
+| PATCH | `/restaurants/:id` | Actualizar restaurante | ADMIN_ROLE |
+| DELETE | `/restaurants/:id` | Eliminar restaurante | ADMIN_ROLE |
+| POST | `/restaurants/:id/photo` | Subir o reemplazar foto banner | ADMIN_ROLE |
+| DELETE | `/restaurants/:id/photo` | Eliminar foto del restaurante | ADMIN_ROLE |
+
+```
+// Crear restaurante usa form-data:
+name, address, phone (8 dígitos), category, capacity (mín 20), photo (File, opcional)
+```
 
 ---
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | /ReportRestGlobal | Genera reporte global de restaurantes. |
-| GET | /ReporteUnRestaurant | Genera reporte de un restaurante específico. |
+## Menú
+
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/menu/restaurant/:restaurantId` | Ver menú de un restaurante | No |
+| GET | `/menu/:id` | Ver platillo por ID | No |
+| GET | `/menu/` | Listar todos los platillos | ADMIN_ROLE |
+| POST | `/menu/` | Crear platillo (foto opcional, form-data) | RES_ADMIN_ROLE |
+| PUT | `/menu/:id` | Actualizar platillo | RES_ADMIN_ROLE |
+| DELETE | `/menu/:id` | Eliminar platillo | RES_ADMIN_ROLE |
+| POST | `/menu/:id/photo` | Subir o reemplazar foto | RES_ADMIN_ROLE |
+| DELETE | `/menu/:id/photo` | Eliminar foto del platillo | RES_ADMIN_ROLE |
+
+---
+
+## Pedidos y Carrito
+
+> El carrito vive en memoria — se pierde si el servidor reinicia.
+
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/orders/menu/:restaurantId` | Ver menú del restaurante | No |
+| POST | `/orders/cart/:userId` | Agregar ítem al carrito | No |
+| GET | `/orders/cart/:userId` | Ver carrito con subtotal, IVA 12% y total | No |
+| PATCH | `/orders/cart/:userId/:menuItemId` | Cambiar cantidad (0 = eliminar) | No |
+| DELETE | `/orders/cart/:userId/:menuItemId` | Quitar ítem del carrito | No |
+| DELETE | `/orders/cart/:userId` | Vaciar carrito | No |
+| POST | `/orders/` | Confirmar pedido | No |
+| GET | `/orders/user/:userId` | Historial del cliente | No |
+| GET | `/orders/restaurant/:restaurantId` | Cola de pedidos activos | RES_ADMIN_ROLE |
+| GET | `/orders/status/:orderId` | Estado e historial del pedido | No |
+| GET | `/orders/:orderId` | Detalle completo del pedido | No |
+| PATCH | `/orders/:orderId/status` | Cambiar estado del pedido | RES_ADMIN_ROLE |
+| DELETE | `/orders/:orderId` | Cancelar pedido | No |
+
+```json
+// Confirmar pedido
+{
+  "userId": "id_del_usuario",
+  "direccion": {
+    "tipo": "Casa",
+    "descripcion": "Zona 1, Calle Falsa 123",
+    "referencias": "Casa con portón azul"
+  },
+  "telefono": "12345678",
+  "tipoPago": "Efectivo",
+  "notas": "Sin cebolla"
+}
+```
+
+Estados del pedido:
+```
+Pendiente → Aceptado → En_preparación → Listo → Entregado
+                    ↓
+                Cancelado
+```
+
+---
+
+## Eventos Gastronómicos
+
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/events/restaurant/:restaurantId` | Ver eventos activos del restaurante | No |
+| GET | `/events/:id` | Ver detalle de evento | No |
+| GET | `/events/` | Ver todos los eventos | ADMIN_ROLE |
+| POST | `/events/` | Crear evento / cupón / promoción | RES_ADMIN_ROLE |
+| PATCH | `/events/:id` | Actualizar evento | RES_ADMIN_ROLE |
+| DELETE | `/events/:id` | Eliminar evento | RES_ADMIN_ROLE |
+| POST | `/events/:id/join` | Inscribirse a evento | Token |
+| DELETE | `/events/:id/join` | Cancelar inscripción | Token |
+| POST | `/events/:id/apply` | Aplicar cupón o promoción | Token |
+
+```json
+// Crear evento
+{
+  "restaurant_id": "id_del_restaurante",
+  "name": "Descuento de verano",
+  "description": "20% de descuento en toda la carta",
+  "type": "coupon",
+  "status": "active",
+  "max_usos": 50,
+  "schedule": {
+    "start_date": "2026-03-01T00:00:00Z",
+    "end_date": "2026-03-31T23:59:00Z",
+    "recurrence": "none",
+    "days_of_week": [],
+    "time_slots": []
+  },
+  "visibility": "public",
+  "tags": ["descuento", "verano"]
+}
+```
+
+---
+
+## Reservaciones
+
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/reservations/disponibilidad/:restaurantName?date=&hour=` | Ver disponibilidad | No |
+| POST | `/reservations/` | Crear reservación | Token |
+| POST | `/reservations/confirm` | Confirmar o cancelar con token | Token |
+| GET | `/reservations/` | Ver mis reservaciones | Token |
+| PUT | `/reservations/:id` | Actualizar reservación | Token |
+| DELETE | `/reservations/:id` | Eliminar reservación | Token |
+| GET | `/reservations/restaurant/:restaurantName` | Ver reservaciones del restaurante | RES_ADMIN_ROLE |
+
+```json
+// Crear reservación
+{
+  "restaurantName": "Los Debuggers",
+  "reservationDate": "2026-03-15",
+  "reservationHour": "19:00",
+  "peopleName": "Juan García",
+  "peopleNumber": 4,
+  "observation": "Mesa cerca de la ventana"
+}
+
+// Confirmar o cancelar
+{
+  "token": "token_recibido_al_crear",
+  "action": "CONFIRMAR"
+}
+```
+
+Estados:
+```
+PENDIENTE → CONFIRMADA → FINALIZADA (automático al pasar la fecha)
+PENDIENTE/CONFIRMADA → CANCELADA
+```
+
+---
+
+## Reports Service (.NET)
+
+| Método | Endpoint | Descripción | Auth |
+|---|---|---|---|
+| GET | `/health` | Estado del servicio | No |
+| GET | `/restaurant/:restaurantId` | Reporte del restaurante | No |
+| GET | `/plataforma` | Estadísticas globales | No |
+| DELETE | `/cache/:restaurantId` | Limpiar caché y recalcular | No |
 
 ---
 
@@ -505,8 +490,35 @@ cd ../add-restaurant-service
 pnpm install
 
 3. Configurar variables de entorno
-Crear el archivo .env en cada servicio Node.js con las variables indicadas arriba.
+Crear el archivo .env en cada servicio Node.js con las variables indicadas.
+```
+### authenthication_server/.env
+```env
+PORT=3013
+URI_MONGODB=mongodb://localhost:27017/auth-de-debuggers
+JWT_SECRET=tu_secreto
+JWT_ISSUER=DebuggersEats
+JWT_AUDIENCE=DebuggersEats
+JWT_EXPIRES_IN=1h
+```
 
+### add-restaurant-service/.env
+```env
+PORT=3014
+URI_MONGODB=mongodb://localhost:27017/auth-de-debuggers
+JWT_SECRET=tu_secreto
+JWT_ISSUER=DebuggersEats
+JWT_AUDIENCE=DebuggersEats
+JWT_EXPIRES_IN=1h
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
+CLOUDINARY_BASE_URL=https://res.cloudinary.com/tu_cloud_name/image/upload/
+CLOUDINARY_RESTAURANTS_FOLDER=add-restaurant/restaurants
+CLOUDINARY_MENU_FOLDER=add-restaurant/menu
+RESERVATION_TOKEN_EXPIRES_HOURS=24
+```
+```bash
 4. Iniciar los servicios
 bash# Terminal 1 — Authentication Service
 cd authenthication_server
