@@ -1,10 +1,10 @@
 import {
-    createMenuService, getMenusService, getMenuByIdService, updateMenuService, deleteMenuService, uploadMenuPhotoService, deleteMenuPhotoService
+    createMenuService, getMenusService, getMenuByIdService, updateMenuService, deleteMenuService, uploadMenuPhotoService, deleteMenuPhotoService, getMenusByRestaurantService
 } from './menu.services.js';
 
 export const createMenu = async (req, res) => {
     try {
-        const menu = await createMenuService(req.body);
+        const menu = await createMenuService(req.body, req.file);
 
         res.status(201).json({
             success: true,

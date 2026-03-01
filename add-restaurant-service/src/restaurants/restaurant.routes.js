@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { createRestaurant, deleteRestaurant, getRestaurantById, updateRestaurant, uploadRestaurantPhoto, deleteRestaurantPhoto } from './restaurant.controller.js';
+import { createRestaurant, deleteRestaurant, getRestaurantById, updateRestaurant, uploadRestaurantPhoto, deleteRestaurantPhoto, getAllRestaurants } from './restaurant.controller.js';
 import { validateCreateRestaurant } from '../../middlewares/restaurant-validator.js'
 import { validateRole } from '../../middlewares/validate-role.js';
 import { validateJWT } from '../../middlewares/validate-jwt.js';
-import { getAllRestaurants } from './restaurant.controller.js';
-import { uploadRestaurantPhoto as uploadRestaurantPhotoMiddleware, handleUploadError } from '../../helpers/file-upload.js';
+import { uploadRestaurantPhoto as multerRestaurant, handleUploadError } from '../../helpers/file-upload.js';
 
 
 
@@ -13,7 +12,7 @@ const router = Router();
 // La foto es opcional al crear: si viene se sube, si no viene se crea sin foto
 router.post(
     '/',
-    uploadRestaurantPhotoMiddleware.single('photo'),
+    multerRestaurant.single('photo'),
     handleUploadError,
     validateJWT,
     validateRole('ADMIN_ROLE'),
@@ -31,7 +30,7 @@ router.get('/',
 // Subir o reemplazar foto de un restaurante ya existente
 router.post(
     '/:id/photo',
-    uploadRestaurantPhotoMiddleware.single('photo'),
+    multerRestaurant.single('photo'),
     handleUploadError,
     validateJWT,
     validateRole('ADMIN_ROLE'),
@@ -63,6 +62,5 @@ router.delete(
     validateRole('ADMIN_ROLE'),
     deleteRestaurantPhoto
 );
-
 
 export default router;

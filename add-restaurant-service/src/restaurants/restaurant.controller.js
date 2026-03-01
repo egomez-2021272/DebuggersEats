@@ -10,7 +10,8 @@ export const createRestaurant = async (req, res) => {
 
         const restaurant = await createRestaurantRecord({
             restaurantData: req.body,
-            userId: req.user.id
+            userId: req.user.id,
+            file: req.file //faltaba
         });
 
         res.status(201).json({
