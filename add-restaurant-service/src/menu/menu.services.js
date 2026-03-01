@@ -78,3 +78,7 @@ export const deleteMenuPhotoService = async (menuId) => {
 
     return menu;
 };
+
+export const getMenusByRestaurantService = async (restaurantId)=>{
+    return await Menu.find({ restaurantId, available: true}).sort({ category: 1, name: 1});
+}

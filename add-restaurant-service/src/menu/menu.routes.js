@@ -9,7 +9,8 @@ import { uploadMenuPhoto as uploadMenuPhotoMiddleware, handleUploadError } from 
 
 const router = Router();
 
-router.get('/', getMenus);
+router.get('/', validateJWT, validateRole('ADMIN_ROLE'), getMenus);
+
 router.get('/restaurant/:restaurantId', getMenusByRestaurant)
 router.get('/:id', getMenuById);
 
