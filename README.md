@@ -2,6 +2,17 @@
 
 > **Nota**: Este proyecto fue desarrollado con fines académicos como parte del curso IN6AM. Forma parte de una arquitectura de microservicios diseñada para la gestión integral de restaurantes mediante tecnologías modernas como Node.js, MongoDB y PostgreSQL.
 
+**Nota**:
+Link de Tablero de Trello:
+https://trello.com/invite/b/698bae6ae08cd6449113f642/ATTI1c2690ee2a76c9dbf8fd888412ae6887D54F8FF7/sistema-de-restaurantes
+
+Link de documento de Evidencia del Trabajo y Participación del Grupo:
+https://cetkinal-my.sharepoint.com/:b:/g/personal/egomez-2021272_kinal_edu_gt/IQAKFy0OabjsRZdSEKhtD-6tAUvDEPZcqCOWQOib4Qy59C4?e=7ADGf3
+
+Link de Reunión de Retrospectiva SCRUM:
+https://cetkinal-my.sharepoint.com/:v:/g/personal/egomez-2021272_kinal_edu_gt/IQBDdoTu70nBRryTjd0L7GyiAXuXhdKxhFsBBooAl_zbT8I?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D&e=LFTnno
+
+
 ---
 
 # Descripción
