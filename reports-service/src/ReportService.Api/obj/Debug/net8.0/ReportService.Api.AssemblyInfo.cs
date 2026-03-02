@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ReportService.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32726084afb24a79f7a23305e1226d2d5d778dc5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ec221931747e59b70ab06f50d0d03ebc5e8ea73")]
 [assembly: System.Reflection.AssemblyProductAttribute("ReportService.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ReportService.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
