@@ -549,8 +549,15 @@ dotnet run
 ---
 # Créditos
 
-Proyecto base desarrollado por: Debuggers - Kinal Guatemala 2026
-Repositorio Original: https://github.com/egomez-2021272/DebuggersEats.git
+Proyecto base desarrollado por:
+Braulio Echeverría
+Curso IN6AM - Kinal Guatemala 2026
+
+Repositorios Originales:
+https://github.com/IN6AMProm33/server_admin.git
+https://github.com/IN6AMProm33/auth-service-nodejs.git
+
+
 Este proyecto fue utilizado como referencia académica y posteriormente adaptado y modificado.
 También se tomó como referencia información que viene de las siguientes fuentes:
 
