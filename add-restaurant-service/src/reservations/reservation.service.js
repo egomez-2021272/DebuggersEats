@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Reservation from './reservation.model.js';
+import Table from '../tables/table.model.js';
 import { getRestaurantByName } from '../restaurants/restaurant.services.js';
 
 const generateConfirmationToken = (reservationId) => {
@@ -52,29 +53,53 @@ export const createReservationRecord = async ({ reservationData, userId }) => {
         const e = new Error(`El restaurante "${reservationData.restaurantName}" no existe o no está activo.`);
         e.statusCode = 404;
         throw e;
-    }// validar si existe el restaurante
+    }//validar si existe el restaurante
+
+    //Validación de mesa - saquene de kibaol
+    const table = await Table.findById(reservationData.tableId);
+
+    if (!table) {
+        const e = new Error('La mesa seleccionada no existe');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    if (!table.isActive) {
+        const e = new Error('La mesa seleccionada no está disponible');
+        e.statusCode = 400;
+        throw e;
+    }
+
+    if (table.restaurantId.toString() !== restaurant._id.toString()) {
+        const e = new Error('La mesa no pertenece al restaurante indicado');
+        e.statusCode = 400;
+        throw e;
+    }
+
+    if (reservationData.peopleNumber > table.capacity) {
+        const e = new Error(
+            `La mesa tiene capacidad para ${table.capacity} personas. Solicitaste ${reservationData.peopleNumber}.`
+        );
+        e.statusCode = 400;
+        throw e;
+    }
 
     const reservationDateH = new Date(reservationData.reservationDate);
     reservationDateH.setHours(0, 0, 0, 0);//Quitar hora en el formato de fecha
 
-    const reservationActive = await Reservation.find({
-        restaurantName: reservationData.restaurantName,
+    //Verificar que la mesa no esté ya reservada en ese mismo horario porque si no hay vergasos
+    const tableConflict = await Reservation.findOne({
+        tableId: reservationData.tableId,
         reservationDate: reservationDateH,
         reservationHour: reservationData.reservationHour,
         status: { $in: ['PENDIENTE', 'CONFIRMADA'] }
     });
 
-    const personasOcupadas = reservationActive.reduce(
-        (sum, r) => sum + r.peopleNumber, 0
-    );
-
-    const espacioDisponible = restaurant.capacity - personasOcupadas;
-
-    if (reservationData.peopleNumber > espacioDisponible) {
-        const e = new Error(`No hay espacio. Disponible ${espacioDisponible} personas de ${restaurant.capacity}`);
-        e.statusCode = 400;
+    if (tableConflict) {
+        const e = new Error('La mesa ya tiene una reservación activa para esa fecha y hora');
+        e.statusCode = 409;
         throw e;
-    }//Que el número de personas no exceda la capacidad del restaurante
+    }
 
     const activeCount = await Reservation.countDocuments({
         userId,
@@ -85,22 +110,7 @@ export const createReservationRecord = async ({ reservationData, userId }) => {
         const e = new Error('No se puede tener más de 3 reservaciones activas al mismo tiempo,');
         e.statusCode = 409;
         throw e;
-    }//no se puede tener más de 3 cuentas activas
-
-    
-
-    const duplicate = await Reservation.findOne({
-        restaurantName: reservationData.restaurantName,
-        reservationDate: reservationDateH,
-        reservationHour: reservationData.reservationHour,
-        status: { $in: ['PENDIENTE', 'CONFIRMADA'] }
-    });
-
-    if (duplicate) {
-        const e = new Error(`Ya existe una reservación activa en "${reservationData.restaurantName}" para esa fecha y hora`);
-        e.statusCode = 409;
-        throw e;
-    }
+    }//no se puede tener más de 3 reservaciones activas
 
     const reservation = new Reservation({
         ...reservationData,
@@ -179,9 +189,9 @@ export const getReservationRecord = async (userId, filters = {}) => {
     const query = { userId };
     if (filters.status) query.status = filters.status;
 
-    return Reservation.find(query).sort({
-        reservationDate: -1, reservationHour: -1
-    })
+    return Reservation.find(query)
+        .populate('tableId', 'tableNumber capacity location')
+        .sort({ reservationDate: -1, reservationHour: -1 });
 };
 
 export const updateReservationRecord = async ({ reservationId, userId, data }) => {
@@ -201,46 +211,55 @@ export const updateReservationRecord = async ({ reservationId, userId, data }) =
         throw e;
     }//No se puede editar reservaciones canceladas
 
-    const newRestaurantName = safeData.restaurantName || reservation.restaurantName;
-    const newDate = safeData.reservationDate ? new Date(safeData.reservationDate) : reservation.reservationDate;
-    const newHour = safeData.reservationHour || reservation.reservationHour;
+    const newTableId   = safeData.tableId   || reservation.tableId;
+    const newDate      = safeData.reservationDate ? new Date(safeData.reservationDate) : reservation.reservationDate;
+    const newHour      = safeData.reservationHour || reservation.reservationHour;
     const newPeopleNumber = safeData.peopleNumber || reservation.peopleNumber;
 
-    if (safeData.restaurantName || safeData.peopleNumber) {
-        const restaurant = await getRestaurantByName(newRestaurantName);
-        if (!restaurant) {
-            const e = new Error(`El restaurante "${newRestaurantName}" no existe o no está activo`);
+    //Validar nueva mesa si se está cambiando
+    if (safeData.tableId || safeData.peopleNumber) {
+        const table = await Table.findById(newTableId);
+
+        if (!table) {
+            const e = new Error('La mesa seleccionada no existe');
             e.statusCode = 404;
             throw e;
-        }//Buscar restaurante si existe
-        if (newPeopleNumber > restaurant.capacity) {
+        }
+
+        if (!table.isActive) {
+            const e = new Error('La mesa seleccionada no está disponible');
+            e.statusCode = 400;
+            throw e;
+        }
+
+        if (newPeopleNumber > table.capacity) {
             const e = new Error(
-                `El número de personas (${newPeopleNumber}) excede la capacidad del restaurante (${restaurant.capacity})`
+                `La mesa tiene capacidad para ${table.capacity} personas. Solicitaste ${newPeopleNumber}.`
             );
             e.statusCode = 400;
             throw e;
-        }//validar que el numero de persona no sea mayor que la capacidad
+        }
     }
+    //Validar nueva mesa si se está cambiando - antes Dios y yo sabiamos que hace esto ahora solo lo sabe Dios
 
-    if (safeData.reservationDate || safeData.reservationHour || safeData.restaurantName) {
+    if (safeData.tableId || safeData.reservationDate || safeData.reservationHour) {
         const normalizedDate = new Date(newDate);
         normalizedDate.setHours(0, 0, 0, 0);
 
-        const duplicate = await Reservation.findOne({
+        //verificar que la mesa no esté ya ocupada en el nuevo slot
+        const tableConflict = await Reservation.findOne({
             _id: { $ne: reservationId },
-            restaurantName: newRestaurantName,
+            tableId: newTableId,
             reservationDate: normalizedDate,
             reservationHour: newHour,
             status: { $in: ['PENDIENTE', 'CONFIRMADA'] }
         });
 
-        if (duplicate) {
-            const e = new Error(
-                `Ya existe una reservación activa en "${newRestaurantName}" para esa fecha y hora`
-            );
+        if (tableConflict) {
+            const e = new Error('La mesa ya tiene una reservación activa para esa fecha y hora');
             e.statusCode = 409;
             throw e;
-        }//Evitar reservaciones duplicadas
+        }//se evitan adlsas reservaciones duplicadas en la misma mesa
 
         if (safeData.reservationDate) safeData.reservationDate = normalizedDate;
     }//if
@@ -270,3 +289,4 @@ export const deleteReservationRecord = async ({ reservationId, userId }) => {
 
     return { deleted: true, reservationId };
 };//Delete
+//Matenme plis
