@@ -11,7 +11,7 @@ const calcularTotalesCarrito = (items) => {
     return { subtotal: parseFloat(subtotal.toFixed(2)), iva, total};
 };
 
-// se obtiene el carrito de un usuario
+//se obtiene el carrito de un usuario
 export const obtenerCarrito = (userId) =>{
     const carrito = carritos.get(userId);
     if(!carrito) return null;
@@ -38,7 +38,7 @@ export const agregarAlCarrito = (userId, restaurantId, item) => {
         carrito = { restaurantId: restaurantId.toString(), items: [] };
     }
 
-    // ver si ya existe el mismo platillo con los mismos aditamentos
+    //ver si ya existe el mismo platillo con los mismos aditamentos
     const aditamentosKey = JSON.stringify((item.aditamentos || []).sort());
     const existente = carrito.items.find(
         i => i.menuItemId === item.menuItemId.toString() &&
@@ -85,7 +85,7 @@ export const actualizarCantidad = (userId, menuItemId, nuevaCantidad) =>{
         );
     }
 
-    // si el carrito quedó vacío, eliminarlo
+    //si el carrito quedó vacío, eliminarlo
     if (carrito.items.length === 0) {
         carritos.delete(userId);
         return { restaurantId: carrito.restaurantId, items: [], subtotal: 0, iva: 0, total: 0 };
