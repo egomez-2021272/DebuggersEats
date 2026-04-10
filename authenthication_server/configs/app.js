@@ -46,29 +46,46 @@ const middlewares = (app) => {
 const seederAdmin = async () => {
     try {
         const adminExists = await User.findOne({ username: 'admin' });
-
         if (adminExists) {
             console.log('Usuario administrador ya existe');
-            return;
+        } else {
+            // ADMIN_ROLE: Administrador principal
+            const hashedPassword = await hash('Admin123!DebuggersEats', 10);
+            const admin = new User({
+                firstName: 'Administrador',
+                surname: 'Principal',
+                email: 'admin@debuggerseats.com',
+                phone: '42459699',
+                username: 'admin',
+                password: hashedPassword,
+                role: 'ADMIN_ROLE',
+                isActive: true
+            });
+            await admin.save();
+            console.log('Usuario administrador creado exitosamente');
         }
 
-        const hashedPassword = await hash('Admin123!DebuggersEats', 10);
-
-        const admin = new User({
-            firstName: 'Administrador',
-            surname: 'Principal',
-            email: 'admin@debuggerseats.com',
-            phone: '42459699',
-            username: 'admin',
-            password: hashedPassword,
-            role: 'ADMIN_ROLE',
-            isActive: true
-        });
-
-        await admin.save();
-        console.log('Usuario administrador creado exitosamente');
+        const resAdminExists = await User.findOne({ username: 'res-admin' });
+        if (resAdminExists) {
+            console.log('Usuario administrador de restaurante ya existe');
+        } else {
+            // RES_ADMIN_ROLE: Administrador de restaurante
+            const hashedPassword = await hash('ResAdmin123!DebuggersEats', 10);
+            const resAdmin = new User({
+                firstName: 'Administrador',
+                surname: 'Restaurante',
+                email: 'res.admin@debuggerseats.com',
+                phone: '42459700',
+                username: 'res-admin',
+                password: hashedPassword,
+                role: 'RES_ADMIN_ROLE',
+                isActive: true
+            });
+            await resAdmin.save();
+            console.log('Usuario administrador de restaurante creado exitosamente');
+        }
     } catch (e) {
-        console.error('Error al crear administrador:', e.message);
+        console.error('Error al crear administradores:', e.message);
     }
 };
 
@@ -82,10 +99,10 @@ export const initServer = async () => {
         await dbConnection();
 
         await seederAdmin();
-        
+
         routes(app);
         app.use(errorHandler);
-        
+
         app.listen(PORT, () => {
             console.log(`Debuggers Eats Server running on port: ${PORT}`);
             console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
