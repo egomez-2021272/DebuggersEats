@@ -1,6 +1,10 @@
 import Order from './order.model.js';
 import MenuItem from '../menu/menu.model.js';
+import Restaurant from '../restaurants/restaurant.model.js';
 import * as CartService from '../orders/cart.service.js'
+
+//ventana de cancelación del cliente
+const CANCEL_WINDOW_MS = 5 * 60 * 1000; //5 minutos en milisegundos
 
 //devuelve el menu del restaurante
 export const getMenu = async (req, res) => {
@@ -8,7 +12,7 @@ export const getMenu = async (req, res) => {
     const { category } = req.query;
 
     try {
-        const filter = { restaurantId, available: true }; //muestra platillos dispobibles
+        const filter = { restaurantId, available: true }; //muestra platillos disponibles
         if (category) filter.category = category;
         const menu = await MenuItem.find(filter).sort({ category: 1, name: 1 });
 
@@ -23,7 +27,7 @@ export const getMenu = async (req, res) => {
     }
 };
 
-//devuelve un platillo específico con sus aditamentos disponible
+//devuelve un platillo específico con sus aditamentos disponibles
 export const getMenuItem = async (req, res) => {
     const { restaurantId, itemId } = req.params;
 
@@ -43,9 +47,15 @@ export const getMenuItem = async (req, res) => {
     }
 };
 
+//validar que el userId del param coincida con el token
 //agregar un menu al carrito del usuario
 export const agregarAlCarrito = async (req, res) => {
     const { userId } = req.params;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes modificar el carrito de otro usuario' });
+    }
+
     const { menuItemId, cantidad, aditamentos } = req.body;
 
     if (!menuItemId || !cantidad || cantidad < 1) {
@@ -78,6 +88,11 @@ export const agregarAlCarrito = async (req, res) => {
 //ver carrito actual
 export const verCarrito = (req, res) => {
     const { userId } = req.params;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes ver el carrito de otro usuario' });
+    }
+
     const carrito = CartService.obtenerCarrito(userId);
 
     if (!carrito) {
@@ -90,6 +105,11 @@ export const verCarrito = (req, res) => {
 //cambia la cantidad de un menu en el carrito - si es 0 se elimina el menu automaticamente
 export const actualizarCantidad = (req, res) => {
     const { userId, menuItemId } = req.params;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes modificar el carrito de otro usuario' });
+    }
+
     const { cantidad } = req.body;
 
     if (cantidad === undefined || cantidad < 0) {
@@ -109,6 +129,11 @@ export const actualizarCantidad = (req, res) => {
 //se elimina un menu especifico del carrito
 export const eliminarDelCarrito = (req, res) => {
     const { userId, menuItemId } = req.params;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes modificar el carrito de otro usuario' });
+    }
+
     const carrito = CartService.eliminarDelCarrito(userId, menuItemId);
 
     if (!carrito) {
@@ -120,6 +145,11 @@ export const eliminarDelCarrito = (req, res) => {
 
 export const vaciarCarrito = (req, res) => {
     const { userId } = req.params;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes vaciar el carrito de otro usuario' });
+    }
+
     CartService.vaciarCarrito(userId);
     res.json({ message: 'Carrito vaciado exitosamente' });
 };
@@ -127,10 +157,12 @@ export const vaciarCarrito = (req, res) => {
 //pedidos, paso final del flujo del cliente
 //confirma el carrito y crea una orden formal en mongo db
 
+//userId tomado del token, no del body
 export const confirmarPedido = async (req, res) => {
-    const { userId, direccion, telefono, tipoPago, notas } = req.body;
+    const userId = req.user.id; //ya no se acepta del body por seguridad
+    const { direccion, telefono, tipoPago, notas } = req.body;
 
-    if (!userId || !direccion || !telefono || !tipoPago) {
+    if (!direccion || !telefono || !tipoPago) {
         return res.status(400).json({
             message: 'Falta campos requeridos'
         });
@@ -146,10 +178,10 @@ export const confirmarPedido = async (req, res) => {
     try {
         //se valida precios contra la DB en el momento de confirmar
         const itemsValidos = [];
-        for(const cartItem of carrito.items){
-            const itemDB = await MenuItem.findOne({_id: cartItem.menuItemId, available: true});
+        for (const cartItem of carrito.items) {
+            const itemDB = await MenuItem.findOne({ _id: cartItem.menuItemId, available: true });
 
-            if(!itemDB){
+            if (!itemDB) {
                 return res.status(409).json({
                     message: `El platillo "${cartItem.nombre}" ya no esta disponible. Por favor actualiza tu carro`,
                 });
@@ -196,49 +228,65 @@ export const confirmarPedido = async (req, res) => {
         });
 
     } catch (err) {
-        res.status(500).json({ message: 'Error al confirmar el pedido', err: err.message});
+        res.status(500).json({ message: 'Error al confirmar el pedido', err: err.message });
     }
 };
 
-//historail de pedidos de un usuario
-export const getPedidosByUser = async (req, res) =>{
-    const { userId} = req.params;
+//historial de pedidos de un usuario
+//usuario solo ve sus propios pedidos
+export const getPedidosByUser = async (req, res) => {
+    const { userId } = req.params;
     const { status } = req.query;
+
+    if (userId !== req.user.id) {
+        return res.status(403).json({ message: 'No puedes ver los pedidos de otro usuario' });
+    }
 
     try {
         const filter = { userId };
         if (status) filter.status = status;
 
-        const orders = await Order.find(filter).sort({ createdAt: -1});//orden - más reciente primas
-        res.json({ total: orders.length, data: orders});
+        const orders = await Order.find(filter).sort({ createdAt: -1 });//orden - más reciente primero
+        res.json({ total: orders.length, data: orders });
     } catch (err) {
-        res.status(500).json({ message: 'Error al obtener pedidos del usuario', err: err.message});
+        res.status(500).json({ message: 'Error al obtener pedidos del usuario', err: err.message });
     }
 };
 
 //lo que el restaurante ve en su panel - cola de pedidos
-export const getPedidosByRestaurant = async(req, res) =>{
+//Seguridad — RES_ADMIN solo ve pedidos de su restaurante
+export const getPedidosByRestaurant = async (req, res) => {
     const { restaurantId } = req.params;
     const { status, todos } = req.query;
-    
-    try {
-        let filter = { restaurantId };
-        if(status){
-            filter.status = status;
 
-        }else if(!todos){
-            //solo se muestra pedidos activpod
-            filter.status = { $nin: ['Entregado', 'Cancelado']};
+    try {
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurante no encontrado' });
         }
 
-        const orders = await Order.find(filter).sort({ createdAt: 1});
-        res.json({ total: orders.length, data: orders});
+        if (restaurant.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'No tienes permisos para ver los pedidos de este restaurante' });
+        }
+
+        let filter = { restaurantId };
+        if (status) {
+            filter.status = status;
+
+        } else if (!todos) {
+            //solo se muestra pedidos activos
+            filter.status = { $nin: ['Entregado', 'Cancelado'] };
+        }
+
+        const orders = await Order.find(filter).sort({ createdAt: 1 });
+        res.json({ total: orders.length, data: orders });
     } catch (err) {
-        res.status(500).json({ message: 'Error al obtener pedidos del restaurante', err: err.message});
+        res.status(500).json({ message: 'Error al obtener pedidos del restaurante', err: err.message });
     }
 };
 
-// detalle de un pedido en concreto
+//detalle de un pedido en concreto
+//Seguridad — cliente ve el suyo; RES_ADMIN ve los de su restaurante
 export const getPedidoById = async (req, res) => {
     const { orderId } = req.params;
     try {
@@ -246,21 +294,37 @@ export const getPedidoById = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Pedido no encontrado' });
         }
+
+        const esCliente = order.userId.toString() === req.user.id;
+        const esResAdmin = req.user.role === 'RES_ADMIN_ROLE';
+
+        if (!esCliente && !esResAdmin) {
+            return res.status(403).json({ message: 'No tienes permisos para ver este pedido' });
+        }
+
+        //si es RES_ADMIN verificar que el pedido pertenece a su restaurante
+        if (esResAdmin && !esCliente) {
+            const restaurant = await Restaurant.findById(order.restaurantId);
+            if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+                return res.status(403).json({ message: 'Este pedido no pertenece a tu restaurante' });
+            }
+        }
+
         res.json({ data: order });
     } catch (err) {
         res.status(500).json({ message: 'Error al obtener el pedido', err: err.message });
     }
 };
 
-// enum: ['Pendiente', 'En_preparación', 'Aceptado', 'Listo', 'Entregado', 'Cancelado'],
+//enum: ['Pendiente', 'En_preparación', 'Aceptado', 'Listo', 'Entregado', 'Cancelado'],
 
 export const actualizarStatus = async (req, res) => {
     const { orderId } = req.params;
-    const { status }  = req.body;
+    const { status } = req.body;
 
     const transicionesValidas = {
         'Pendiente': ['Aceptado', 'Cancelado'],
-        'Aceptado':  ['En_preparación', 'Cancelado'],
+        'Aceptado': ['En_preparación', 'Cancelado'],
         'En_preparación': ['Listo'],
         'Listo': ['Entregado'],
         'Entregado': [],
@@ -273,6 +337,12 @@ export const actualizarStatus = async (req, res) => {
             return res.status(404).json({ message: 'Pedido no encontrado' });
         }
 
+        //Seguridad — RES_ADMIN solo actualiza pedidos de su restaurante
+        const restaurant = await Restaurant.findById(order.restaurantId);
+        if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'No tienes permisos para actualizar este pedido' });
+        }
+
         const permitidos = transicionesValidas[order.status];
         if (!permitidos.includes(status)) {
             return res.status(400).json({
@@ -282,13 +352,13 @@ export const actualizarStatus = async (req, res) => {
         }
 
         order.status = status;
-        await order.save(); 
+        await order.save();
 
         res.json({
             message: `Pedido actualizado a ${status}`,
             data: {
-                orderId:  order._id,
-                status:   order.status,
+                orderId: order._id,
+                status: order.status,
                 historial: order.historialStatus,
             },
         });
@@ -297,7 +367,65 @@ export const actualizarStatus = async (req, res) => {
     }
 };
 
-//se cancela un pedido con su estado pendiente o aceptado
+//Edición de pedido por el RES_ADMIN (ajustes de disponibilidad)
+export const editarPedidoPorRestaurante = async (req, res) => {
+    const { orderId } = req.params;
+    const { items, notas } = req.body;
+
+    try {
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ message: 'Pedido no encontrado' });
+        }
+
+        const restaurant = await Restaurant.findById(order.restaurantId);
+        if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'No tienes permisos para editar este pedido' });
+        }
+
+        if (!['Pendiente', 'Aceptado'].includes(order.status)) {
+            return res.status(400).json({
+                message: `No se puede editar un pedido en estado ${order.status}`
+            });
+        }
+
+        // solo se permiten editar items y notas
+        if (items && items.length > 0) {
+            //validar que cada item siga disponible en DB
+            const itemsValidos = [];
+            for (const reqItem of items) {
+                const itemDB = await MenuItem.findOne({ _id: reqItem.menuItemId, available: true });
+                if (!itemDB) {
+                    return res.status(409).json({
+                        message: `El platillo "${reqItem.nombre || reqItem.menuItemId}" ya no está disponible`
+                    });
+                }
+                itemsValidos.push({
+                    menuItemId: itemDB._id,
+                    nombre: itemDB.name,
+                    precio: itemDB.price,
+                    cantidad: reqItem.cantidad,
+                    aditamentos: reqItem.aditamentos || [],
+                    subtotal: parseFloat((itemDB.price * reqItem.cantidad).toFixed(2))
+                });
+            }
+            order.items = itemsValidos;
+        }
+
+        if (notas !== undefined) order.notas = notas;
+
+        await order.save();
+
+        res.json({
+            message: 'Pedido actualizado por el restaurante',
+            data: order
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al editar el pedido', error: error.message });
+    }
+};
+
+//Cancelación con reglas de negocio (cliente 5 min + Pendiente=¿)
 export const cancelarPedido = async (req, res) => {
     const { orderId } = req.params;
     try {
@@ -306,10 +434,39 @@ export const cancelarPedido = async (req, res) => {
             return res.status(404).json({ message: 'Pedido no encontrado' });
         }
 
-        if (!['Pendiente', 'Aceptado'].includes(order.status)) {
-            return res.status(400).json({
-                message: `No se puede cancelar un pedido en estado ${order.status}`,
-            });
+        const esCliente = order.userId.toString() === req.user.id;
+        const esResAdmin = req.user.role === 'RES_ADMIN_ROLE';
+
+        if (!esCliente && !esResAdmin) {
+            return res.status(403).json({ message: 'No tienes permisos para cancelar este pedido' });
+        }
+
+        if (esResAdmin) {
+            //RES_ADMIN verifica que el pedido pertenece a su restaurante
+            const restaurant = await Restaurant.findById(order.restaurantId);
+            if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+                return res.status(403).json({ message: 'Este pedido no pertenece a tu restaurante' });
+            }
+            //RES_ADMIN puede cancelar si está Pendiente o Aceptado
+            if (!['Pendiente', 'Aceptado'].includes(order.status)) {
+                return res.status(400).json({
+                    message: `No se puede cancelar un pedido en estado ${order.status}`
+                });
+            }
+        } else {
+            //cliente solo puede cancelar si está Pendiente y dentro de los 5 minutos
+            if (order.status !== 'Pendiente') {
+                return res.status(400).json({
+                    message: 'Solo puedes cancelar un pedido mientras está en estado Pendiente'
+                });
+            }
+
+            const tiempoTranscurrido = Date.now() - new Date(order.createdAt).getTime();
+            if (tiempoTranscurrido > CANCEL_WINDOW_MS) {
+                return res.status(400).json({
+                    message: 'El periodo de cancelación de 5 minutos ha expirado. Contacta al restaurante.'
+                });
+            }
         }
 
         order.status = 'Cancelado';
@@ -320,5 +477,3 @@ export const cancelarPedido = async (req, res) => {
         res.status(500).json({ message: 'Error al cancelar el pedido', error: error.message });
     }
 };
-
-
