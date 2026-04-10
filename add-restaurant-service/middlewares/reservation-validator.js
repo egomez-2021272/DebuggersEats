@@ -1,5 +1,6 @@
 import { body, param } from 'express-validator';
 import { validateJWT } from './validate-jwt.js';
+import { checkValidators } from './check-validators.js';
 
 export const validateCreateReservation = [
     validateJWT,
@@ -32,6 +33,13 @@ export const validateCreateReservation = [
         .isLength({ max: 100 })
         .withMessage('El nombre del restaurante no puede exceder 100 caracteres.'),
 
+    //mesa en reservación
+    body('tableId')
+        .notEmpty()
+        .withMessage('Debe seleccionar una mesa.')
+        .isMongoId()
+        .withMessage('El ID de mesa no es válido.'),
+
     body('peopleNumber')
         .notEmpty()
         .withMessage('El número de personas es obligatorio.')
@@ -43,7 +51,9 @@ export const validateCreateReservation = [
         .optional()
         .trim()
         .isLength({ max: 255 })
-        .withMessage('Las observaciones no deben exceder 255 caracteres.')
+        .withMessage('Las observaciones no deben exceder 255 caracteres.'),
+
+    checkValidators
 ];
 
 //ACTUALIZAR
@@ -79,15 +89,23 @@ export const validateUpdateReservation = [
 
     body('peopleNumber')
         .optional()
-        .isInt({ min: 1, max: 12 })
-        .withMessage('El número de personas debe ser entre 1 y 12.')
+        .isInt({ min: 1, max: 20 })
+        .withMessage('El número de personas debe ser entre 1 y 20.')
         .toInt(),
+
+    //cambio de mesa
+    body('tableId')
+        .optional()
+        .isMongoId()
+        .withMessage('El ID de mesa no es válido.'),
 
     body('observation')
         .optional()
         .trim()
         .isLength({ max: 255 })
-        .withMessage('Las observaciones no deben exceder 255 caracteres.')
+        .withMessage('Las observaciones no deben exceder 255 caracteres.'),
+
+    checkValidators
 ];
 
 //CONFIRMAR/CANCELAR
@@ -102,5 +120,7 @@ export const validateTokenAction = [
         .trim()
         .toUpperCase()
         .isIn(['CONFIRMAR', 'CANCELAR'])
-        .withMessage('Acción inválida. Use CONFIRMAR o CANCELAR.')
+        .withMessage('Acción inválida. Use CONFIRMAR o CANCELAR.'),
+
+    checkValidators
 ];
