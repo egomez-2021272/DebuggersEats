@@ -22,6 +22,27 @@ export const createUserRecord = async ({ userData }) => {
     return userObject;
 };
 
+//Auto-registro público de clientes
+export const registerUserRecord = async ({ userData }) => {
+    const hashedPassword = await hash(userData.password, 10);
+    const activationToken = uuidv4();
+    const user = new User({
+        ...userData,
+        password: hashedPassword,
+        activationToken,
+        role: 'USER_ROLE', //siempre USER_ROLE
+        isActive: false
+    });
+    await user.save();
+
+    await sendActivationEmail(user.email, activationToken, user.firstName);
+
+    const userObject = user.toObject();
+    delete userObject.password;
+    delete userObject.activationToken;
+    return userObject;
+};//registerUserRecord
+
 export const activateUserAccount = async (token) => {
     const user = await User.findOne({ activationToken: token });
 
@@ -137,3 +158,98 @@ export const resetPassword = async (token, newPassword) => {
     
     return { message: 'Contraseña restablecida exitosamente' };
 };
+
+//Edición de perfil propio
+export const updateProfileRecord = async (userId, profileData) => {
+    //campos editables por el propio usuario
+    const { firstName, surname, phone, email, username } = profileData;
+
+    //validar unicidad de email si se cambia
+    if (email) {
+        const existing = await User.findOne({ email, _id: { $ne: userId } });
+        if (existing) {
+            const e = new Error('El correo ya está registrado por otro usuario');
+            e.statusCode = 409;
+            throw e;
+        }
+    }
+
+    //validar unicidad de username si se cambia
+    if (username) {
+        const existing = await User.findOne({ username, _id: { $ne: userId } });
+        if (existing) {
+            const e = new Error('El username ya está registrado por otro usuario');
+            e.statusCode = 409;
+            throw e;
+        }
+    }
+
+    const updated = await User.findByIdAndUpdate(
+        userId,
+        { firstName, surname, phone, email, username },
+        { new: true, runValidators: true }
+    ).select('-password -activationToken -resetPasswordToken -resetPasswordExpires');
+
+    if (!updated) {
+        const e = new Error('Usuario no encontrado');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    return updated;
+};//updateProfileRecord
+
+//Gestión completa de usuarios (ADMIN)
+export const getAllUsersRecord = async () => {
+    return User.find()
+        .select('-password -activationToken -resetPasswordToken -resetPasswordExpires')
+        .sort({ createdAt: -1 });
+};//getAllUsersRecord
+
+export const getUserByIdRecord = async (userId) => {
+    const user = await User.findById(userId)
+        .select('-password -activationToken -resetPasswordToken -resetPasswordExpires');
+
+    if (!user) {
+        const e = new Error('Usuario no encontrado');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    return user;
+};//getUserByIdRecord
+
+export const toggleUserStatusRecord = async (userId) => {
+    const user = await User.findById(userId);
+
+    if (!user) {
+        const e = new Error('Usuario no encontrado');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    const userObject = user.toObject();
+    delete userObject.password;
+    delete userObject.activationToken;
+    delete userObject.resetPasswordToken;
+    delete userObject.resetPasswordExpires;
+
+    return userObject;
+};//toggleUserStatusRecord
+
+export const deleteUserRecord = async (userId) => {
+    const user = await User.findById(userId);
+
+    if (!user) {
+        const e = new Error('Usuario no encontrado');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    await User.deleteOne({ _id: userId });
+    return { deleted: true, userId };
+};//deleteUserRecord
+//Unicidad = Que solo exista uno

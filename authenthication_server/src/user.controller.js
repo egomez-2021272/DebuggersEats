@@ -1,7 +1,7 @@
-import { createUserRecord, activateUserAccount, loginUser, changePassword, requestPasswordReset, resetPassword } from "./user.services.js";
+import { createUserRecord, registerUserRecord, activateUserAccount, loginUser, changePassword, requestPasswordReset, resetPassword, updateProfileRecord, getAllUsersRecord, getUserByIdRecord, toggleUserStatusRecord, deleteUserRecord } from "./user.services.js";
 import jwt from 'jsonwebtoken';
 
-export const createUser = async(req, res) => {
+export const createUser = async (req, res) => {
     try {
         const user = await createUserRecord({
             userData: req.body
@@ -12,7 +12,7 @@ export const createUser = async(req, res) => {
             message: 'Usuario registrado exitosamente. Se ha enviado un correo de activación.',
             data: user
         });
-    } catch(e) {
+    } catch (e) {
         res.status(500).json({
             success: false,
             message: 'Error al registrar el usuario',
@@ -21,17 +21,38 @@ export const createUser = async(req, res) => {
     }//try-catch
 };//crearUsuario
 
-export const activateAccount = async(req, res) => {
+//Auto-registro público de clientes
+export const registerUser = async (req, res) => {
+    try {
+        const user = await registerUserRecord({
+            userData: req.body
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Cuenta creada exitosamente. Se ha enviado un correo de activación.',
+            data: user
+        });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({
+            success: false,
+            message: 'Error al crear la cuenta',
+            error: e.message
+        });
+    }//try-catch
+};//registerUser
+
+export const activateAccount = async (req, res) => {
     try {
         const { token } = req.params;
-        
+
         await activateUserAccount(token);
-        
+
         res.status(200).json({
             success: true,
             message: 'Cuenta activada exitosamente. Ya puedes iniciar sesión.'
         });
-    } catch(e) {
+    } catch (e) {
         res.status(400).json({
             success: false,
             message: 'Error al activar la cuenta',
@@ -40,14 +61,14 @@ export const activateAccount = async(req, res) => {
     }//try-catch
 };//activar cuenta
 
-export const login = async(req, res) => {
+export const login = async (req, res) => {
     try {
         const { username, password } = req.body;
-        
+
         const user = await loginUser(username, password);
-        
+
         const token = jwt.sign(
-            { 
+            {
                 id: user._id,
                 username: user.username,
                 role: user.role
@@ -59,7 +80,7 @@ export const login = async(req, res) => {
                 audience: process.env.JWT_AUDIENCE
             }
         );
-        
+
         res.status(200).json({
             success: true,
             message: 'Login exitoso',
@@ -68,7 +89,7 @@ export const login = async(req, res) => {
                 token
             }
         });
-    } catch(e) {
+    } catch (e) {
         res.status(401).json({
             success: false,
             message: 'Error al iniciar sesión',
@@ -78,18 +99,18 @@ export const login = async(req, res) => {
 };//login
 
 
-export const updatePassword = async(req, res) => {
+export const updatePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
         const userId = req.user.id;
-        
+
         await changePassword(userId, currentPassword, newPassword);
-        
+
         res.status(200).json({
             success: true,
             message: 'Contraseña actualizada exitosamente'
         });
-    } catch(e) {
+    } catch (e) {
         res.status(400).json({
             success: false,
             message: 'Error al cambiar la contraseña',
@@ -98,17 +119,17 @@ export const updatePassword = async(req, res) => {
     }//try-catch
 };//update
 
-export const forgotPassword = async(req, res) => {
+export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
-        
+
         const result = await requestPasswordReset(email);
-        
+
         res.status(200).json({
             success: true,
             message: result.message
         });
-    } catch(e) {
+    } catch (e) {
         res.status(400).json({
             success: false,
             message: 'Error al procesar la solicitud',
@@ -117,18 +138,18 @@ export const forgotPassword = async(req, res) => {
     }
 };//forgotPassword
 
-export const resetPasswordController = async(req, res) => {
+export const resetPasswordController = async (req, res) => {
     try {
         const { token } = req.params;
         const { newPassword } = req.body;
-        
+
         const result = await resetPassword(token, newPassword);
-        
+
         res.status(200).json({
             success: true,
             message: result.message
         });
-    } catch(e) {
+    } catch (e) {
         res.status(400).json({
             success: false,
             message: 'Error al restablecer la contraseña',
@@ -136,3 +157,95 @@ export const resetPasswordController = async(req, res) => {
         });
     }
 };//reset
+
+//Edición de perfil propio
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await updateProfileRecord(userId, req.body);
+
+        res.status(200).json({
+            success: true,
+            message: 'Perfil actualizado exitosamente',
+            data: user
+        });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({
+            success: false,
+            message: 'Error al actualizar el perfil',
+            error: e.message
+        });
+    }//try-catch
+};//updateProfile
+
+//Gestión completa de usuarios
+export const getUsers = async (req, res) => { //Obtener todos los usuarios - Opcional: Agregar estado de cuenta al listar
+    try {
+        const users = await getAllUsersRecord();
+
+        res.status(200).json({
+            success: true,
+            total: users.length,
+            data: users
+        });
+    } catch (e) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener los usuarios',
+            error: e.message
+        });
+    }//try-catch
+};//getUsers
+
+export const getUserById = async (req, res) => {//Obtener un usaurio (admin)
+    try {
+        const user = await getUserByIdRecord(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({
+            success: false,
+            message: 'Error al obtener el usuario',
+            error: e.message
+        });
+    }//try-catch
+};//getUserById
+
+export const toggleUserStatus = async (req, res) => {//Activar desactivar uusuario
+    try {
+        const user = await toggleUserStatusRecord(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: `Usuario ${user.isActive ? 'activado' : 'desactivado'} exitosamente`,
+            data: user
+        });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({
+            success: false,
+            message: 'Error al cambiar el estado del usuario',
+            error: e.message
+        });
+    }//try-catch
+};//toggleUserStatus
+
+export const deleteUser = async (req, res) => {//Eliminar usuario
+    try {
+        const result = await deleteUserRecord(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Usuario eliminado exitosamente',
+            data: result
+        });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({
+            success: false,
+            message: 'Error al eliminar el usuario',
+            error: e.message
+        });
+    }//try-catch
+};//deleteUser
