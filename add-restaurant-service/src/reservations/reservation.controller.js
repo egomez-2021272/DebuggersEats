@@ -1,4 +1,5 @@
 import Reservation from './reservation.model.js';
+import Table from '../tables/table.model.js';
 import { createReservationRecord, getReservationRecord, updateReservationRecord, deleteReservationRecord, tokenAction } from "./reservation.service.js";
 import { getRestaurantByName } from "../restaurants/restaurant.services.js";
 
@@ -59,8 +60,8 @@ export const getReservation = async (req, res) => {
             success: false,
             message: e.message || 'Error al obtener las reservaciones'
         });
-    }//try-catcjh
-}//getRervation
+    }//try-catch
+}//getReservation
 
 
 export const updateReservation = async (req, res) => {
@@ -104,6 +105,7 @@ export const deleteReservation = async (req, res) => {
     }
 };
 
+//Disponibilidad por mesas en lugar de capacidad total
 export const checkDisponibilidad = async (req, res) => {
     const { restaurantName } = req.params;
     const { date, hour } = req.query;
@@ -117,15 +119,21 @@ export const checkDisponibilidad = async (req, res) => {
         const reservationDate = new Date(date);
         reservationDate.setHours(0, 0, 0, 0);
 
-        const reservaciones = await Reservation.find({
+        //obtener todas las mesas activas del restaurante
+        const allTables = await Table.find({ restaurantId: restaurant._id, isActive: true });
+
+        //obtener reservaciones activas para ese slot
+        const reservedTableIds = await Reservation.find({
             restaurantName,
             reservationDate,
             reservationHour: hour,
             status: { $in: ['PENDIENTE', 'CONFIRMADA'] }
-        });
+        }).distinct('tableId');
 
-        const ocupado = reservaciones.reduce((sum, r) => sum + r.peopleNumber, 0);
-        const disponible = restaurant.capacity - ocupado;
+        const reservedSet = new Set(reservedTableIds.map(id => id.toString()));
+
+        const availableTables = allTables.filter(t => !reservedSet.has(t._id.toString()));
+        const occupiedTables  = allTables.filter(t => reservedSet.has(t._id.toString()));
 
         res.json({
             success: true,
@@ -133,19 +141,28 @@ export const checkDisponibilidad = async (req, res) => {
                 restaurante: restaurantName,
                 fecha: date,
                 hora: hour,
-                capacidadTotal: restaurant.capacity,
-                personasOcupadas: ocupado,
-                espacioDisponible: disponible,
-                disponible: disponible > 0,
-                mensaje: disponible === 0
-                ? 'No hay espacio disponible para esa fecha y hora': disponible <= 3
-                ? `¡Quedan solo ${disponible} espacios!`: `Hay ${disponible} espacios disponibles`
+                totalMesas: allTables.length,
+                mesasDisponibles: availableTables.length,
+                mesasOcupadas: occupiedTables.length,
+                disponible: availableTables.length > 0,
+                mesas: availableTables.map(t => ({
+                    id: t._id,
+                    tableNumber: t.tableNumber,
+                    capacity: t.capacity,
+                    location: t.location
+                })),
+                mensaje: availableTables.length === 0
+                    ? 'No hay mesas disponibles para esa fecha y hora'
+                    : availableTables.length <= 2
+                    ? `¡Solo quedan ${availableTables.length} mesa(s) disponible(s)!`
+                    : `Hay ${availableTables.length} mesas disponibles`
             }
         });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }
 };
+//Disponibilidad por mesas en lugar de capacidad total
 
 export const getReservationsByRestaurant = async (req, res) => {
     const { restaurantName } = req.params;
@@ -161,6 +178,7 @@ export const getReservationsByRestaurant = async (req, res) => {
         }
 
         const reservations = await Reservation.find(query)
+            .populate('tableId', 'tableNumber capacity location')
             .sort({ reservationDate: 1, reservationHour: 1 });
 
         res.json({

@@ -29,6 +29,13 @@ const reservationSchema = new Schema({
         index: true
     },
 
+    //Mesa asignada a la reservación
+    tableId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Table',
+        required: [true, 'Debe seleccionar una mesa para la reservación']
+    },
+
     peopleNumber: {
         type: Number,
         required: [true, 'El número de personas es obligatorio'],
@@ -60,13 +67,15 @@ const reservationSchema = new Schema({
         versionKey: false
     });
 
-
+//Una mesa no puede tener dos reservaciones activas en la misma fecha y hora
 reservationSchema.index(
-    { restaurantName: 1, reservationDate: 1, reservationHour: 1 },
+    { tableId: 1, reservationDate: 1, reservationHour: 1 },
     {
         unique: true,
         partialFilterExpression: { status: { $in: ['PENDIENTE', 'CONFIRMADA'] } },
-        name: 'unique_active_reservation'
+        name: 'unique_active_reservation_per_table'
     }
 );
+
 export default model('Reservation', reservationSchema);
+//Esto tambien foeron otros 20 oesis mas
