@@ -13,6 +13,7 @@ import menuRoutes from '../src/menu/menu.routes.js';
 import orderRoutes from '../src/orders/order.routes.js';
 import eventRoutes from '../src/gastronomicEvents/event.routes.js'
 import reservationRoutes from '../src/reservations/reservation.routes.js'
+import reviewRoutes from '../src/reviews/review.routes.js';
 
 
 const BASE_PATH = '/add-restaurant/v1';
@@ -24,6 +25,7 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/orders`, orderRoutes);
     app.use(`${BASE_PATH}/events`, eventRoutes);
     app.use(`${BASE_PATH}/reservations`, reservationRoutes);
+    app.use(`${BASE_PATH}/reviews`, reviewRoutes);
 
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
