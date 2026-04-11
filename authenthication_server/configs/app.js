@@ -12,11 +12,13 @@ import { dbConnection } from './db.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 import authRoutes from '../src/user.routes.js';
+import { swaggerSpec, swaggerUi } from "./documentation.js";
 
 const BASE_PATH = '/debuggersEatsAdmin/v1';
 
 const routes = (app) => {
     app.use(`${BASE_PATH}/auth`, authRoutes);
+    app.use(`${BASE_PATH}/api-docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
             status: 'Healthy',
