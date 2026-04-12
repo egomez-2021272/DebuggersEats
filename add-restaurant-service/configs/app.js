@@ -4,11 +4,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
 import { corsOptions } from './cors.configuration.js';
 import { helmetOptions } from './helmet.configuration.js';
 import { dbConnection } from './db.configuration.js';
-import { swaggerDocs } from './documentation.js';
+import { swaggerSpec, swaggerUi } from "./documentation.js";
 import restaurantRoutes from '../src/restaurants/restaurant.routes.js';
 import menuRoutes from '../src/menu/menu.routes.js';
 import orderRoutes from '../src/orders/order.routes.js';
@@ -16,7 +15,6 @@ import eventRoutes from '../src/gastronomicEvents/event.routes.js'
 import reservationRoutes from '../src/reservations/reservation.routes.js'
 import tableRoutes from '../src/tables/table.routes.js';
 import reviewRoutes from '../src/reviews/review.routes.js';
-
 
 const BASE_PATH = '/add-restaurant/v1';
 
@@ -29,7 +27,7 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/reservations`, reservationRoutes);
     app.use(`${BASE_PATH}/tables`, tableRoutes);
     app.use(`${BASE_PATH}/reviews`, reviewRoutes);
-
+    app.use(`${BASE_PATH}/api-docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
             status: 'Healthy',
@@ -64,14 +62,13 @@ export const initServer = async () => {
     try {
         middlewares(app);
         await dbConnection();
-        swaggerDocs(app);
         routes(app);
         //app.use(errorHandler);
 
         app.listen(PORT, () => {
             console.log(`Add Restaurant Service running on port ${PORT}`);
             console.log(`Health check endpoint: http://localhost:${PORT}${BASE_PATH}/health`);
-            console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
+            console.log(`Swagger docs: http://localhost:${PORT}${BASE_PATH}/api-docs`);
         });
 
     } catch (err) {

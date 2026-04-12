@@ -3003,11 +3003,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mzaba\\OneDrive\\Escritorio\\Repositorios(Subir cosas)\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+      "projectUniqueName": "C:\\Users\\mzaba\\Downloads\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
       "projectName": "ReportService.Api",
-      "projectPath": "C:\\Users\\mzaba\\OneDrive\\Escritorio\\Repositorios(Subir cosas)\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+      "projectPath": "C:\\Users\\mzaba\\Downloads\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
       "packagesPath": "C:\\Users\\mzaba\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mzaba\\OneDrive\\Escritorio\\Repositorios(Subir cosas)\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
+      "outputPath": "C:\\Users\\mzaba\\Downloads\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\mzaba\\AppData\\Roaming\\NuGet\\NuGet.Config"

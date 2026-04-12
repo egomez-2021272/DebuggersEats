@@ -1,6 +1,12 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
- 
+import { reservationSchemas } from '../src/reservations/reservation.schema.js';
+import { menuItemSchemas } from '../src/menu/menu.schema.js';
+import { orderSchemas } from '../src/orders/orders.schema.js';
+import { reviewSchemas } from '../src/reviews/review.schema.js';
+import { tableSchemas } from '../src/tables/tables.schema.js';
+import { gastronomicEventSchemas } from '../src/gastronomicEvents/event.schema.js';
+
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -16,6 +22,14 @@ const options = {
             }
         ],
         components: {
+            schemas: {
+                ...reservationSchemas,
+                ...menuItemSchemas,
+                ...orderSchemas,
+                ...reviewSchemas,
+                ...tableSchemas,
+                ...gastronomicEventSchemas
+            },
             securitySchemes: {
                 bearerAuth: {
                     type: 'http',
@@ -26,12 +40,12 @@ const options = {
         },
         security: [{ bearerAuth: [] }],
         tags: [
-            { name: 'Restaurants',        description: 'Gestión de restaurantes' },
-            { name: 'Menu',               description: 'Platos y bebidas del menú' },
-            { name: 'Orders',             description: 'Carrito y pedidos' },
-            { name: 'Reservations',       description: 'Reservaciones de mesas' },
-            { name: 'Tables',             description: 'Mesas del restaurante' },
-            { name: 'Reviews',            description: 'Reseñas y respuestas' },
+            { name: 'Restaurants', description: 'Gestión de restaurantes' },
+            { name: 'Menu', description: 'Platos y bebidas del menú' },
+            { name: 'Orders', description: 'Carrito y pedidos' },
+            { name: 'Reservations', description: 'Reservaciones de mesas' },
+            { name: 'Tables', description: 'Mesas del restaurante' },
+            { name: 'Reviews', description: 'Reseñas y respuestas' },
             { name: 'Gastronomic Events', description: 'Eventos, promociones y cupones' }
         ]
     },
@@ -45,19 +59,7 @@ const options = {
         './src/gastronomicEvents/event.routes.js'
     ]
 };
- 
+
 const swaggerSpec = swaggerJsdoc(options);
- 
-export const swaggerDocs = (app) => {
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-        customSiteTitle: 'DebuggersEats API Docs',
-        swaggerOptions: {
-            persistAuthorization: true
-        }
-    }));
- 
-    app.get('/api-docs.json', (req, res) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(swaggerSpec);
-    });
-};
+
+export { swaggerSpec, swaggerUi };
