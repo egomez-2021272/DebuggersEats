@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import { corsOptions } from './cors.configuration.js';
 import { helmetOptions } from './helmet.configuration.js';
 import { dbConnection } from './db.configuration.js';
+import { swaggerDocs } from './documentation.js';
 import restaurantRoutes from '../src/restaurants/restaurant.routes.js';
 import menuRoutes from '../src/menu/menu.routes.js';
 import orderRoutes from '../src/orders/order.routes.js';
@@ -63,12 +64,14 @@ export const initServer = async () => {
     try {
         middlewares(app);
         await dbConnection();
+        swaggerDocs(app);
         routes(app);
         //app.use(errorHandler);
 
         app.listen(PORT, () => {
             console.log(`Add Restaurant Service running on port ${PORT}`);
             console.log(`Health check endpoint: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
         });
 
     } catch (err) {
