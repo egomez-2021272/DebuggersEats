@@ -11,7 +11,6 @@ import { helmetOptions } from './helmet.configuration.js';
 import { dbConnection } from './db.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
-import { swaggerDocs } from './documentation.js';
 import authRoutes from '../src/user.routes.js';
 import { swaggerSpec, swaggerUi } from "./documentation.js";
 
@@ -100,7 +99,6 @@ export const initServer = async () => {
     try {
         middlewares(app);
         await dbConnection();
-        swaggerDocs(app);
         await seederAdmin();
 
         routes(app);
