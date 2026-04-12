@@ -226,28 +226,3 @@ router.delete(
 );
 
 export default router;
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Table:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *         restaurantId:
- *           type: string
- *         tableNumber:
- *           type: number
- *         capacity:
- *           type: number
- *         status:
- *           type: boolean
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */

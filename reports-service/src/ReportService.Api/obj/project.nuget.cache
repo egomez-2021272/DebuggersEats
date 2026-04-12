@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "86/Wb8O7dTs=",
+  "dgSpecHash": "arar09QcA7k=",
   "success": true,
-  "projectFilePath": "C:\\Users\\mzaba\\OneDrive\\Escritorio\\Repositorios(Subir cosas)\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+  "projectFilePath": "C:\\Users\\mzaba\\Downloads\\Repositorios\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\mzaba\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\mzaba\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",

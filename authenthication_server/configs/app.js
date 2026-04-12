@@ -107,6 +107,7 @@ export const initServer = async () => {
         app.listen(PORT, () => {
             console.log(`Debuggers Eats Server running on port: ${PORT}`);
             console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`Swagger docs: http://localhost:${PORT}${BASE_PATH}/api-docs`);
         });
     } catch (e) {
         console.error(`Error al iniciar el servidor: ${e.message}`);

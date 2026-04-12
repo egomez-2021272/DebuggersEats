@@ -207,38 +207,3 @@ router.patch(
 router.delete('/:orderId', validateJWT, cancelarPedido);
 
 export default router;
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Order:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *         userId:
- *           type: string
- *         restaurantId:
- *           type: string
- *         items:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               menuItemId:
- *                 type: string
- *               quantity:
- *                 type: integer
- *         total:
- *           type: number
- *         status:
- *           type: string
- *           enum: [PENDIENTE, CONFIRMADO, EN_PROCESO, ENTREGADO, CANCELADO]
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */

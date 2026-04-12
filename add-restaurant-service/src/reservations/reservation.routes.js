@@ -198,6 +198,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
+ *           example: "664f1a2b3c4d5e6f7a8b9c0d"
  *         description: ID de la reservación
  *     requestBody:
  *       required: true
@@ -209,15 +210,20 @@ router.get(
  *               reservationDate:
  *                 type: string
  *                 format: date
+ *                 example: "2026-04-11"
  *               reservationHour:
  *                 type: string
  *                 pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$'
+ *                 example: "19:00"
  *               peopleName:
  *                 type: string
+ *                 example: "Juan Pérez"
  *               peopleNumber:
  *                 type: integer
+ *                 example: 4
  *               observation:
  *                 type: string
+ *                 example: "Mesa cerca de la ventana"
  *     responses:
  *       200:
  *         description: Reservación actualizada
@@ -230,6 +236,7 @@ router.get(
  *                   type: boolean
  *                 message:
  *                   type: string
+ *                   example: "Reservación actualizada correctamente"
  *                 data:
  *                   $ref: '#/components/schemas/Reservation'
  *       400:
@@ -311,17 +318,20 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
+ *           example: "La Parrilla Grill"
  *       - name: date
  *         in: query
  *         required: true
  *         schema:
  *           type: string
  *           format: date
+ *           example: "2026-04-11"
  *       - name: hour
  *         in: query
  *         required: true
  *         schema:
  *           type: string
+ *           example: "19:00"
  *     responses:
  *       200:
  *         description: Disponibilidad obtenida
@@ -374,16 +384,19 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
+ *           example: "La Parrilla Grill"
  *       - name: status
  *         in: query
  *         schema:
  *           type: string
  *           enum: [PENDIENTE, CONFIRMADA, CANCELADA, FINALIZADA]
+ *           example: "CONFIRMADA"
  *       - name: date
  *         in: query
  *         schema:
  *           type: string
  *           format: date
+ *           example: "2026-04-11"
  *     responses:
  *       200:
  *         description: Reservaciones obtenidas
@@ -413,39 +426,3 @@ router.get(
     getReservationsByRestaurant
 )
 export default router;
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Reservation:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *         userId:
- *           type: string
- *         reservationDate:
- *           type: string
- *           format: date
- *         reservationHour:
- *           type: string
- *           example: "19:00"
- *         peopleName:
- *           type: string
- *         restaurantName:
- *           type: string
- *         peopleNumber:
- *           type: integer
- *         observation:
- *           type: string
- *         status:
- *           type: string
- *           enum: [PENDIENTE, CONFIRMADA, CANCELADA, FINALIZADA]
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
