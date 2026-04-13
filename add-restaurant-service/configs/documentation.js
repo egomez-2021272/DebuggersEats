@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import { restaurantSchemas } from '../src/restaurants/restaurant.schema.js'
 import { reservationSchemas } from '../src/reservations/reservation.schema.js';
 import { menuItemSchemas } from '../src/menu/menu.schema.js';
 import { orderSchemas } from '../src/orders/orders.schema.js';
@@ -23,6 +24,7 @@ const options = {
         ],
         components: {
             schemas: {
+                ...restaurantSchemas,
                 ...reservationSchemas,
                 ...menuItemSchemas,
                 ...orderSchemas,
