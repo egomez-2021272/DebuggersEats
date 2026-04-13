@@ -9,7 +9,7 @@ const router = Router();
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants:
+ * /add-restaurant/v1/restaurants:
  *   post:
  *     tags: [Restaurants]
  *     summary: Crear restaurante
@@ -112,7 +112,7 @@ router.post(
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants:
+ * /add-restaurant/v1/restaurants:
  *   get:
  *     tags: [Restaurants]
  *     summary: Obtener todos los restaurantes
@@ -154,7 +154,7 @@ router.get(
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants/{id}/photo:
+ * /add-restaurant/v1/restaurants/{id}/photo:
  *   post:
  *     tags: [Restaurants]
  *     summary: Subir o reemplazar foto de un restaurante
@@ -220,7 +220,7 @@ router.post(
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants/{id}:
+ * /add-restaurant/v1/restaurants/{id}:
  *   get:
  *     tags: [Restaurants]
  *     summary: Obtener restaurante por ID
@@ -255,7 +255,7 @@ router.get('/:id', getRestaurantById);
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants/{id}:
+ * /add-restaurant/v1/restaurants/{id}:
  *   patch:
  *     tags: [Restaurants]
  *     summary: Actualizar restaurante
@@ -355,7 +355,7 @@ router.patch(
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants/{id}:
+ * /add-restaurant/v1/restaurants/{id}:
  *   delete:
  *     tags: [Restaurants]
  *     summary: Eliminar restaurante
@@ -402,7 +402,7 @@ router.delete(
 
 /**
  * @swagger
- * /debuggersEatsAdmin/v1/restaurants/{id}/photo:
+ * /add-restaurant/v1/restaurants/{id}/photo:
  *   delete:
  *     tags: [Restaurants]
  *     summary: Eliminar foto de un restaurante
