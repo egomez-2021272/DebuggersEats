@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using ReportService.Api.Data;
 using ReportService.Api.Services;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,23 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "DebuggersEats — Report Service",
+        Version = "v1",
+        Description = "Documentación del servicio de reportes de DebuggersEats"
+    });
+
+    // Habilita los comentarios XML en Swagger
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
 });
 
 var app = builder.Build();
@@ -38,12 +57,15 @@ app.Lifetime.ApplicationStarted.Register(() =>
             foreach (var addr in addresses)
             {
                 var health = $"{addr.TrimEnd('/')}/api/reports/health";
+                var swagger = $"{addr.TrimEnd('/')}/swagger";
                 startupLogger.LogInformation("El API de ReportService está ejecutándose en {Url}. Endpoint de salud: {HealthUrl}", addr, health);
+                startupLogger.LogInformation("Swagger docs: {SwaggerUrl}", swagger);
             }
         }
         else
         {
             startupLogger.LogInformation("API de ReportService iniciada. Endpoint de salud: /api/reports/health");
+            startupLogger.LogInformation("Swagger docs: /swagger");
         }
     }
     catch (Exception ex)
@@ -53,6 +75,14 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.UseCors();
+
+// Swagger UI
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ReportService v1");
+    c.RoutePrefix = "swagger";
+});
+
 app.MapControllers();
 app.Run();
-
