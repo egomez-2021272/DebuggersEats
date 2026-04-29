@@ -1,44 +1,19 @@
 import Restaurant from './restaurant.model.js';
-import { uploadImage, deleteImage, getFullImageUrl } from '../../helpers/cloudinary-service.js';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { cloudinary } from '../../middlewares/file-uploader.js';
 
-const RESTAURANT_FOLDER = process.env.CLOUDINARY_RESTAURANTS_FOLDER || 'restaurants';
+const RESTAURANT_FOLDER = 'add-restaurant/restaurants';
 
 export const createRestaurantRecord = async ({ restaurantData, userId, file }) => {
-    console.log('FILE EN SERVICE:', file);
-    const restaurant = new Restaurant({
-        ...restaurantData,
-        createdBy: userId
-    });
+    const data = { ...restaurantData, createdBy: userId };
 
-    await restaurant.save();
-
-    // Si viene foto, subirla a Cloudinary
     if (file) {
-        console.log('SUBIENDO A CLOUDINARY..');
-        try {
-            const fileName = `restaurant-${uuidv4()}${path.extname(file.originalname)}`;
-            await uploadImage(file.path, fileName, RESTAURANT_FOLDER);
-            restaurant.photo = fileName;
-            await restaurant.save();
-            console.log('CLODUINARY OKEY', fileName);
-        } catch (err) {
-            console.error('CLOUDINARY_ERROR', err.message);
-        }
-        
+        data.photo = file.path; //URL pública de Cloudinary
     }
 
-    return {
-        ...restaurant.toObject(),
-        photoUrl: restaurant.photo ? getFullImageUrl(restaurant.photo, RESTAURANT_FOLDER) : null
-    };
-
-    
-
-    
+    const restaurant = new Restaurant(data);
+    await restaurant.save();
+    return restaurant;
 };
-
 
 export const getAllRestaurantsRecord = async () => {
     return Restaurant.find().sort({ createdAt: -1 });
@@ -52,21 +27,21 @@ export const uploadRestaurantPhotoService = async ({ restaurantId, file }) => {
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) throw new Error('Restaurante no encontrado');
 
-    // Eliminar foto anterior en Cloudinary si existe
+    //Eliminar foto anterior de Cloudinary si existe
     if (restaurant.photo) {
-        await deleteImage(restaurant.photo, RESTAURANT_FOLDER);
+        try {
+            const parts = restaurant.photo.split('/');
+            const fileNameWithExt = parts[parts.length - 1];
+            const publicId = `${RESTAURANT_FOLDER}/${fileNameWithExt.split('.')[0]}`;
+            await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+            console.error(`Error al eliminar imagen anterior de Cloudinary: ${err.message}`);
+        }
     }
 
-    const fileName = `restaurant-${uuidv4()}${path.extname(file.originalname)}`;
-    await uploadImage(file.path, fileName, RESTAURANT_FOLDER);
-
-    restaurant.photo = fileName;
+    restaurant.photo = file.path;
     await restaurant.save();
-
-    return {
-        ...restaurant.toObject(),
-        photoUrl: getFullImageUrl(fileName, RESTAURANT_FOLDER)
-    };
+    return restaurant;
 };
 
 export const deleteRestaurantPhotoService = async (restaurantId) => {
@@ -74,7 +49,15 @@ export const deleteRestaurantPhotoService = async (restaurantId) => {
     if (!restaurant) throw new Error('Restaurante no encontrado');
 
     if (restaurant.photo) {
-        await deleteImage(restaurant.photo, RESTAURANT_FOLDER);
+        try {
+            const parts = restaurant.photo.split('/');
+            const fileNameWithExt = parts[parts.length - 1];
+            const publicId = `${RESTAURANT_FOLDER}/${fileNameWithExt.split('.')[0]}`;
+            await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+            console.error(`Error al eliminar imagen de Cloudinary: ${err.message}`);
+        }
+
         restaurant.photo = null;
         await restaurant.save();
     }

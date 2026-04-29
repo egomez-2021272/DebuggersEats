@@ -3,7 +3,7 @@ import { createRestaurant, deleteRestaurant, getRestaurantById, updateRestaurant
 import { validateCreateRestaurant } from '../../middlewares/restaurant-validator.js'
 import { validateRole } from '../../middlewares/validate-role.js';
 import { validateJWT } from '../../middlewares/validate-jwt.js';
-import { uploadRestaurantPhoto as multerRestaurant, handleUploadError } from '../../helpers/file-upload.js';
+import { uploadRestaurantPhoto as multerRestaurant, handleUploadError } from '../../middlewares/file-uploader.js'
 
 const router = Router();
 
@@ -148,7 +148,7 @@ router.post(
 router.get(
     '/',
     validateJWT,
-    validateRole('ADMIN_ROLE'),
+    validateRole('ADMIN_ROLE', 'RES_ADMIN_ROLE', 'USER_ROLE'),
     getAllRestaurants
 );
 
