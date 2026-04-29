@@ -10,8 +10,24 @@ const axiosAuth = axios.create({
     }
 });
 
+const axiosRestaurant = axios.create({
+    baseURL: import.meta.env.VITE_RESTAURANT_URL,
+    timeout: 8000,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
 //INTERCEPTORES DE TOKENS
 axiosAuth.interceptors.request.use((config) => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+axiosRestaurant.interceptors.request.use((config) => {
     const token = useAuthStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -28,5 +44,6 @@ const handleUnauthorized = (error) => {
 };
 
 axiosAuth.interceptors.response.use((res) => res, handleUnauthorized);
+axiosRestaurant.interceptors.response.use((res) => res, handleUnauthorized);
 
-export { axiosAuth };
+export { axiosAuth, axiosRestaurant };
