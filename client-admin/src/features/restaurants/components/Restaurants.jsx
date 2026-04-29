@@ -5,6 +5,7 @@ import { RestaurantModal } from "./RestaurantModal.jsx";
 import { useUIStore } from "../../auth/store/uiStore.js";
 import { showError } from "../../../shared/utils/toast.js";
 import { useAuthStore } from "../../auth/store/authStore.js";
+import { useSaveRestaurant } from "../hooks/useSaveRestaurant.js";
 
 const CATEGORY_LABELS = {
     COMIDA_RAPIDA: 'Comida Rápida',
@@ -28,18 +29,27 @@ const pill = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.
 
 export const Restaurants = () => {
     const { restaurants, loading, error, getRestaurants, deleteRestaurant } = useRestaurantStore();
+    const { saveRestaurant } = useSaveRestaurant();
     const [openModal, setOpenModal] = useState(false);
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     const [filterCategory, setFilterCategory] = useState('ALL');
     const [search, setSearch] = useState('');
     const [expandedId, setExpandedId] = useState(null);
+    const [saving, setSaving] = useState(false);  
     const { openConfirm } = useUIStore();
     const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN_ROLE');
 
     useEffect(() => { getRestaurants(); }, [getRestaurants]);
     useEffect(() => { if (error) showError(error); }, [error]);
 
-    if (loading && restaurants.length === 0) return <Spinner />;
+    const handleSave = async (formData, restaurantId) => {
+        setSaving(true);
+        const ok = await saveRestaurant(formData, restaurantId);
+        setSaving(false);
+        return ok;
+    };
+
+    if (loading && restaurants.length === 0 && !openModal) return <Spinner />;
 
     const filtered = restaurants.filter((r) => {
         const matchesCategory = filterCategory === 'ALL' || r.category === filterCategory;
@@ -162,7 +172,14 @@ export const Restaurants = () => {
                                                 style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                                                onClick={(e) => { e.stopPropagation(); openConfirm({ title: 'Eliminar restaurante', message: `¿Eliminar "${restaurant.name}"? Esta acción no se puede deshacer.`, onConfirm: () => deleteRestaurant(restaurant._id) }); }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openConfirm({
+                                                        title: 'Eliminar restaurante',
+                                                        message: `¿Eliminar "${restaurant.name}"? Esta acción no se puede deshacer.`,
+                                                        onConfirm: () => deleteRestaurant(restaurant._id)
+                                                    });
+                                                }}
                                             >
                                                 Eliminar
                                             </button>
@@ -175,7 +192,14 @@ export const Restaurants = () => {
                 </div>
             )}
 
-            <RestaurantModal isOpen={openModal} onClose={handleClose} restaurant={selectedRestaurant} />
+            <RestaurantModal
+                isOpen={openModal}
+                onClose={handleClose}
+                restaurant={selectedRestaurant}
+                onSave={handleSave}
+                loading={saving}
+                error={error}
+            />
         </div>
     );
 };
