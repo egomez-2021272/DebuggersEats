@@ -19,7 +19,6 @@ axiosAuth.interceptors.request.use((config) => {
     return config;
 });
 
-
 const handleUnauthorized = (error) => {
     const status = error.response?.status;
     if (status === 401) {
@@ -28,6 +27,6 @@ const handleUnauthorized = (error) => {
     return Promise.reject(error);
 };
 
-
+axiosAuth.interceptors.response.use((res) => res, handleUnauthorized);
 
 export { axiosAuth };
