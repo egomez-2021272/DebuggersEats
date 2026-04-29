@@ -4,7 +4,7 @@ import { createMenu, getMenus, getMenuById, updateMenu, deleteMenu, getMenusByRe
 import { validateJWT } from '../../middlewares/validate-jwt.js'
 import { validateRole } from '../../middlewares/validate-role.js';
 //import { getMenuByIdService } from './menu.services.js';
-import { uploadMenuPhoto as uploadMenuPhotoMiddleware, handleUploadError } from '../../helpers/file-upload.js';
+import { uploadMenuPhoto as uploadMenuPhotoMiddleware, handleUploadError } from '../../middlewares/file-uploader.js';
 
 
 const router = Router();
@@ -40,7 +40,7 @@ const router = Router();
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/', validateJWT, validateRole('ADMIN_ROLE'), getMenus);
+router.get('/', validateJWT, validateRole('ADMIN_ROLE', 'RES_ADMIN_ROLE', 'USER_ROLE'), getMenus);
 
 /**
  * @swagger
