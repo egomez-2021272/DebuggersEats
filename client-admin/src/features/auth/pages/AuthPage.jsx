@@ -29,12 +29,7 @@ export const AuthPage = () => {
                     className="flex flex-col items-center justify-center py-8 px-6"
                     style={{ background: 'linear-gradient(135deg, #F2509C 0%, #C35BB9 50%, #9362D9 100%)' }}
                 >
-                    <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center mb-3 shadow-lg"
-                        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
-                    >
-                        <img src={logoImg} alt="DebuggersEats" className="w-9 h-9 object-contain" />
-                    </div>
+                        <img src={logoImg} alt="DebuggersEats" className="w-24 h-24 object-contain" />
                     <h1 className="text-white font-bold text-xl tracking-tight">{title}</h1>
                     <p className="text-white text-xs mt-0.5" style={{ opacity: 0.75 }}>{subtitle}</p>
                 </div>
