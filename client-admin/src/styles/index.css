@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dbe-pink: #F2509C;
+  --color-dbe-purple-pink: #C35BB9;
+  --color-dbe-purple: #9362D9;
+  --color-dbe-black: #0B0B0D;
+  --color-dbe-light: #F2F2F2;
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  --dbe-pink: #F2509C;
+  --dbe-purple-pink: #C35BB9;
+  --dbe-purple: #9362D9;
+  --dbe-black: #0B0B0D;
+  --dbe-light: #F2F2F2;
+  --dbe-gradient: linear-gradient(135deg, #F2509C 0%, #C35BB9 50%, #9362D9 100%);
+  --dbe-gradient-h: linear-gradient(90deg, #F2509C 0%, #9362D9 100%);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.15s ease-out;
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.2s ease-out;
+}
+
+.sidebar-item {
+  position: relative;
+}
+
+.sidebar-item.active {
+  background: linear-gradient(90deg, rgba(242, 80, 156, 0.15) 0%, rgba(147, 98, 217, 0.1) 100%);
+  border-left: 3px solid var(--dbe-pink);
+  color: #fff;
+}
+
+.sidebar-item.active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 3px 0 0 3px;
+  background: var(--dbe-gradient-h);
+}
+
+.dbe-btn-primary {
+  background: var(--dbe-gradient-h);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: opacity 0.2s;
+}
+
+.dbe-btn-primary:hover {
+  opacity: 0.88;
+}
+
+.dbe-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset;
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+}
