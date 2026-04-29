@@ -30,12 +30,16 @@ export const registerUserRecord = async ({ userData }) => {
         ...userData,
         password: hashedPassword,
         activationToken,
-        role: 'USER_ROLE', //siempre USER_ROLE
+        role: 'USER_ROLE',
         isActive: false
     });
     await user.save();
 
-    await sendActivationEmail(user.email, activationToken, user.firstName);
+    try {
+        await sendActivationEmail(user.email, activationToken, user.firstName);
+    } catch (emailError) {
+        console.error('Error al enviar email de activación:', emailError);
+    }
 
     const userObject = user.toObject();
     delete userObject.password;
@@ -57,7 +61,7 @@ export const activateUserAccount = async (token) => {
     user.isActive = true;
     user.activationToken = undefined;
     await user.save();
-    
+
     return user;
 };
 
@@ -81,7 +85,7 @@ export const loginUser = async (username, password) => {
     }
 
     const isFirstLogin = user.createdAt.getTime() === user.updatedAt.getTime();
-    
+
     if (isFirstLogin) {
         try {
             await sendWelcomeEmail(user.email, user.firstName, user.username);
@@ -99,63 +103,67 @@ export const loginUser = async (username, password) => {
 
 export const changePassword = async (userId, currentPassword, newPassword) => {
     const user = await User.findById(userId);
-    
+
     if (!user) {
         throw new Error('Usuario no encontrado');
     }
-    
+
     const isPasswordValid = await verify(currentPassword, user.password);
-    
+
     if (!isPasswordValid) {
         throw new Error('Contraseña actual incorrecta');
     }
-    
+
     const hashedPassword = await hash(newPassword, 10);
-    
+
     user.password = hashedPassword;
     await user.save();
     await sendPasswordChangedEmail(user.email, user.firstName);
     return { message: 'Contraseña actualizada exitosamente' };
 };
 
-export const requestPasswordReset = async(email)=>{
+export const requestPasswordReset = async (email) => {
     const user = await User.findOne({ email });
-    
+
     if (!user) {
         throw new Error('No existe un usuario con ese correo electrónico');
     }
-    
+
     if (!user.isActive) {
         throw new Error('La cuenta no está activada');
     }
+
     const resetToken = uuidv4();
     const resetExpires = new Date(Date.now() + 3600000);
-    
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetExpires;
     await user.save();
-    await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+
+    try {
+        await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+    } catch (emailError) {
+        console.error('Error al enviar email de reset:', emailError);
+    }
     return { message: 'Se ha enviado un correo con instrucciones para restablecer tu contraseña' };
-}//requestPasswordReset
+}
 
 export const resetPassword = async (token, newPassword) => {
     const user = await User.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: Date.now() }
     });
-    
+
     if (!user) {
         throw new Error('Token de recuperación inválido o expirado');
     }
-    
+
     const hashedPassword = await hash(newPassword, 10);
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+    
     await user.save();
-    
     await sendPasswordChangedEmail(user.email, user.firstName);
-    
     return { message: 'Contraseña restablecida exitosamente' };
 };
 
