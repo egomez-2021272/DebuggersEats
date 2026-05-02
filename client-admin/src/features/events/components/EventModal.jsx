@@ -1,0 +1,375 @@
+
+import { useState, useEffect } from 'react';
+
+const DAYS = [
+    { value: 0, label: 'Dom' },
+    { value: 1, label: 'Lun' },
+    { value: 2, label: 'Mar' },
+    { value: 3, label: 'Mié' },
+    { value: 4, label: 'Jue' },
+    { value: 5, label: 'Vie' },
+    { value: 6, label: 'Sáb' },
+];
+
+const INIT = {
+    name: '',
+    description: '',
+    type: 'event',
+    status: 'draft',
+    restaurant_id: '',
+    schedule: {
+        start_date: '',
+        end_date: '',
+        recurrence: 'none',
+        days_of_week: [],
+        time_slots: [{ from: '', to: '' }],
+    },
+    visibility: 'public',
+    max_capacity: '',
+    max_usos: '',
+    tags: '',
+};
+
+const label = (txt, req = false) => (
+    <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: '0.04em', display: 'block', marginBottom: 4 }}>
+        {txt} {req && <span style={{ color: '#F2509C' }}>*</span>}
+    </label>
+);
+
+const inputSx = {
+    width: '100%',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    padding: '8px 12px',
+    color: '#fff',
+    fontSize: 13,
+    outline: 'none',
+    boxSizing: 'border-box',
+    colorScheme: 'dark',
+};
+
+const selectSx = { 
+    ...inputSx, 
+    cursor: 'pointer',
+    colorScheme: 'dark' };
+
+export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
+    const isEdit = Boolean(event?._id);
+
+    // Pre-poblar formulario al editar
+    const [form, setForm] = useState(() => {
+        if (!event) return { ...INIT };
+        return {
+            name: event.name || '',
+            description: event.description || '',
+            type: event.type || 'event',
+            status: event.status || 'draft',
+            restaurant_id: event.restaurant_id?._id || event.restaurant_id || '',
+            schedule: {
+                start_date: event.schedule?.start_date ? event.schedule.start_date.slice(0, 10) : '',
+                end_date: event.schedule?.end_date ? event.schedule.end_date.slice(0, 10) : '',
+                recurrence: event.schedule?.recurrence || 'none',
+                days_of_week: event.schedule?.days_of_week || [],
+                time_slots: event.schedule?.time_slots?.length ? event.schedule.time_slots : [{ from: '', to: '' }],
+            },
+            visibility: event.visibility || 'public',
+            max_capacity: event.max_capacity || '',
+            max_usos: event.max_usos || '',
+            tags: (event.tags || []).join(', '),
+        };
+    });
+
+    const [error, setError] = useState('');
+
+    const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+    const setSched = (key, val) => setForm((f) => ({ ...f, schedule: { ...f.schedule, [key]: val } }));
+
+    const toggleDay = (d) => {
+        setSched(
+            'days_of_week',
+            form.schedule.days_of_week.includes(d)
+                ? form.schedule.days_of_week.filter((x) => x !== d)
+                : [...form.schedule.days_of_week, d].sort(),
+        );
+    };
+
+    const handleSubmit = async () => {
+        setError('');
+        if (!form.name.trim()) return setError('El nombre es requerido.');
+        if (!form.restaurant_id) return setError('Selecciona un restaurante.');
+        if (!form.schedule.start_date || !form.schedule.end_date) return setError('Las fechas son requeridas.');
+
+        const payload = {
+            name: form.name.trim(),
+            description: form.description.trim(),
+            type: form.type,
+            status: form.status,
+            restaurant_id: form.restaurant_id,
+            schedule: {
+                start_date: form.schedule.start_date,
+                end_date: form.schedule.end_date,
+                recurrence: form.schedule.recurrence,
+                days_of_week: form.schedule.days_of_week,
+                time_slots: form.schedule.time_slots.filter((s) => s.from && s.to),
+            },
+            visibility: form.visibility,
+            tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        };
+
+        if (form.max_capacity) payload.max_capacity = Number(form.max_capacity);
+        if (form.max_usos) payload.max_usos = Number(form.max_usos);
+
+        const res = await onSave(payload, isEdit ? event._id : null);
+        if (res && !res.success) setError(res.error || 'Error al guardar');
+    };
+
+    return (
+        <div
+            style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                background: 'rgba(0,0,0,0.7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 16,
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div
+                style={{
+                    background: '#111118',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 16,
+                    width: '100%',
+                    maxWidth: 560,
+                    maxHeight: '90vh',
+                    overflowY: 'auto',
+                    padding: '28px 28px',
+                    scrollbarWidth: 'thin',
+                }}
+            >
+                {/* Encabezado */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <div>
+                        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>
+                            {isEdit ? 'Editar evento' : 'Nuevo evento gastronómico'}
+                        </h2>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: '2px 0 0' }}>
+                            Solo RES_ADMIN_ROLE puede crear o editar eventos.
+                        </p>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                </div>
+
+                {/* ── Sección: Información básica ── */}
+                <Section title="Información básica">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        <div style={{ gridColumn: '1/-1' }}>
+                            {label('Nombre', true)}
+                            <input
+                                style={inputSx}
+                                value={form.name}
+                                onChange={(e) => set('name', e.target.value)}
+                                placeholder="Ej. Noche de tapas españolas"
+                            />
+                        </div>
+
+                        <div>
+                            {label('Tipo', true)}
+                            <select style={selectSx} value={form.type} onChange={(e) => set('type', e.target.value)}>
+                                <option value="event">Evento</option>
+                                <option value="promotion">Promoción</option>
+                                <option value="coupon">Cupón</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            {label('Estado')}
+                            <select style={selectSx} value={form.status} onChange={(e) => set('status', e.target.value)}>
+                                <option value="draft">Borrador</option>
+                                <option value="active">Activo</option>
+                                <option value="paused">Pausado</option>
+                                <option value="expired">Expirado</option>
+                                <option value="cancelled">Cancelado</option>
+                            </select>
+                        </div>
+
+                        <div style={{ gridColumn: '1/-1' }}>
+                            {label('Restaurante', true)}
+                            <select style={selectSx} value={form.restaurant_id} onChange={(e) => set('restaurant_id', e.target.value)}>
+                                <option value="">— Seleccionar restaurante —</option>
+                                {restaurants.map((r) => (
+                                    <option key={r._id} value={r._id}>{r.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ gridColumn: '1/-1' }}>
+                            {label('Descripción')}
+                            <textarea
+                                style={{ ...inputSx, resize: 'vertical', minHeight: 72 }}
+                                value={form.description}
+                                onChange={(e) => set('description', e.target.value)}
+                                placeholder="Descripción breve del evento..."
+                            />
+                        </div>
+                    </div>
+                </Section>
+
+                {/* ── Sección: Horario ── */}
+                <Section title="Horario">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        <div>
+                            {label('Fecha inicio', true)}
+                            <input type="date" style={inputSx} value={form.schedule.start_date}
+                                onChange={(e) => setSched('start_date', e.target.value)} />
+                        </div>
+                        <div>
+                            {label('Fecha fin', true)}
+                            <input type="date" style={inputSx} value={form.schedule.end_date}
+                                onChange={(e) => setSched('end_date', e.target.value)} />
+                        </div>
+                        <div>
+                            {label('Recurrencia')}
+                            <select style={selectSx} value={form.schedule.recurrence}
+                                onChange={(e) => setSched('recurrence', e.target.value)}>
+                                <option value="none">Sin recurrencia</option>
+                                <option value="daily">Diario</option>
+                                <option value="weekly">Semanal</option>
+                                <option value="monthly">Mensual</option>
+                            </select>
+                        </div>
+                        <div>
+                            {label('Horario (primer slot)')}
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <input type="time" style={{ ...inputSx, flex: 1 }}
+                                    value={form.schedule.time_slots[0]?.from || ''}
+                                    onChange={(e) => {
+                                        const slots = [...form.schedule.time_slots];
+                                        slots[0] = { ...slots[0], from: e.target.value };
+                                        setSched('time_slots', slots);
+                                    }} />
+                                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>a</span>
+                                <input type="time" style={{ ...inputSx, flex: 1 }}
+                                    value={form.schedule.time_slots[0]?.to || ''}
+                                    onChange={(e) => {
+                                        const slots = [...form.schedule.time_slots];
+                                        slots[0] = { ...slots[0], to: e.target.value };
+                                        setSched('time_slots', slots);
+                                    }} />
+                            </div>
+                        </div>
+
+                        {/* Días de la semana */}
+                        <div style={{ gridColumn: '1/-1' }}>
+                            {label('Días de la semana')}
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                {DAYS.map((d) => {
+                                    const sel = form.schedule.days_of_week.includes(d.value);
+                                    return (
+                                        <button
+                                            key={d.value}
+                                            onClick={() => toggleDay(d.value)}
+                                            style={{
+                                                padding: '4px 10px',
+                                                borderRadius: 20,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                border: sel ? '1px solid #C35BB9' : '1px solid rgba(255,255,255,0.1)',
+                                                background: sel ? 'rgba(195,91,185,0.2)' : 'rgba(255,255,255,0.04)',
+                                                color: sel ? '#C35BB9' : 'rgba(255,255,255,0.4)',
+                                                transition: 'all 0.15s',
+                                            }}
+                                        >
+                                            {d.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+
+                {/* ── Sección: Capacidad y uso ── */}
+                <Section title="Capacidad y uso">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        <div>
+                            {label('Capacidad máxima')}
+                            <input type="number" min="1" style={inputSx}
+                                placeholder="Sin límite"
+                                value={form.max_capacity}
+                                onChange={(e) => set('max_capacity', e.target.value)} />
+                        </div>
+                        <div>
+                            {label('Máx. usos (cupón/promo)')}
+                            <input type="number" min="1" style={inputSx}
+                                placeholder="Sin límite"
+                                value={form.max_usos}
+                                onChange={(e) => set('max_usos', e.target.value)} />
+                        </div>
+                    </div>
+                </Section>
+
+                {/* ── Sección: Visibilidad y tags ── */}
+                <Section title="Visibilidad y etiquetas">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                        <div>
+                            {label('Visibilidad')}
+                            <select style={selectSx} value={form.visibility} onChange={(e) => set('visibility', e.target.value)}>
+                                <option value="public">Público</option>
+                                <option value="private">Privado</option>
+                                <option value="members_only">Solo socios</option>
+                            </select>
+                        </div>
+                        <div>
+                            {label('Tags (separados por coma)')}
+                            <input style={inputSx}
+                                placeholder="tapas, vino, 2x1"
+                                value={form.tags}
+                                onChange={(e) => set('tags', e.target.value)} />
+                        </div>
+                    </div>
+                </Section>
+
+                {/* Error */}
+                {error && (
+                    <p style={{ color: '#f87171', fontSize: 13, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '8px 12px', margin: '0 0 16px' }}>
+                        {error}
+                    </p>
+                )}
+
+                {/* Botones */}
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button onClick={onClose}
+                        style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                        Cancelar
+                    </button>
+                    <button onClick={handleSubmit} disabled={saving}
+                        style={{
+                            padding: '9px 24px', borderRadius: 8, border: 'none',
+                            background: saving ? 'rgba(255,255,255,0.1)' : 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
+                            color: '#fff', fontSize: 13, fontWeight: 700,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            opacity: saving ? 0.7 : 1,
+                            transition: 'opacity 0.2s',
+                        }}>
+                        {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear evento'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Sección auxiliar
+const Section = ({ title, children }) => (
+    <div style={{ marginBottom: 24 }}>
+        <p style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.25)', marginBottom: 12, margin: '0 0 12px',
+        }}>
+            {title}
+        </p>
+        {children}
+    </div>
+);
