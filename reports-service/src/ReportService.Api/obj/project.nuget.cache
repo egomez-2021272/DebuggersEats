@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "IpDAbKeI5co=",
+  "dgSpecHash": "SCDQBcqwfWI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+  "projectFilePath": "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\esdra\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\esdra\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",

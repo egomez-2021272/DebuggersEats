@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj": {}
+    "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj": {
+    "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+        "projectUniqueName": "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
         "projectName": "ReportService.Api",
-        "projectPath": "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
+        "projectPath": "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\ReportService.Api.csproj",
         "packagesPath": "C:\\Users\\esdra\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\esdra\\Desktop\\Fix auth\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
+        "outputPath": "C:\\Users\\esdra\\Desktop\\fix menus\\DebuggersEats\\reports-service\\src\\ReportService.Api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\esdra\\AppData\\Roaming\\NuGet\\NuGet.Config"
