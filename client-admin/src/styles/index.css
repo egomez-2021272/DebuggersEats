@@ -103,3 +103,13 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: #fff;
   caret-color: #fff;
 }
+
+/*Poner las listas con fondo oscuro */
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #111118 !important;
+  color: #ffffff !important;
+}

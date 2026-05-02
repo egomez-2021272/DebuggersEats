@@ -17,7 +17,8 @@ export const useRestaurantStore = create((set, get) => ({
         try {
             set({ loading: true, error: null });
             const response = await getRestaurantsRequest();
-            set({ restaurants: response.data.data, loading: false });
+            const data = response.data?.data ?? response.data ?? [];
+            set({ restaurants: Array.isArray(data) ? data : [], loading: false });
         } catch (err) {
             set({
                 error: err.response?.data?.message || "Error al listar restaurantes",
