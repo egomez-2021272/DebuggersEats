@@ -38,7 +38,6 @@ export const Restaurants = () => {
     const [search, setSearch] = useState('');
     const [expandedId, setExpandedId] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [saving, setSaving] = useState(false);
     const { openConfirm } = useUIStore();
     const role = useAuthStore((s) => s.user?.role);
     const isAdmin = role === 'ADMIN_ROLE';
