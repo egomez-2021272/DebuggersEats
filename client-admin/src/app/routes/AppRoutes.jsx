@@ -9,6 +9,8 @@ import { Users } from "../../features/users/components/Users.jsx"
 import { RoleGuard } from "./RoleGuard.jsx"
 import { UserPage } from "../../features/users/pages/UserPage.jsx"
 import { VerifyEmailPage } from '../../features/auth/pages/VerifyEmailPage.jsx'
+import { Events } from "../../features/events/components/Events.jsx"
+import { Reservations } from "../../features/reservations/components/Reservation.jsx"
 
 
 export const AppRoutes = () => {
@@ -57,7 +59,7 @@ export const AppRoutes = () => {
         <Route
           path="events"
           element={
-            <RoleGuard allowedRoles={["ADMIN_ROLE", "RES_ADMIN_ROLE"]}>
+            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
               <Events />
             </RoleGuard>
           }
@@ -65,7 +67,7 @@ export const AppRoutes = () => {
         <Route
           path="reservations"
           element={
-            <RoleGuard allowedRoles={["ADMIN_ROLE", "RES_ADMIN_ROLE"]}>
+            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
               <Reservations />
             </RoleGuard>
           }
