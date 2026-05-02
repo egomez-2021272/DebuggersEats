@@ -31,3 +31,27 @@ export const uploadRestaurantPhoto = async (id, formData) => {
 export const deleteRestaurantPhoto = async (id) => {
     return await axiosRestaurant.delete(`/restaurants/${id}/photo`);
 };
+
+export const createMenu = async(formData)=>{
+    return await axiosRestaurant.post(`/menu`, formData,{
+        headers: {'Content-Type': 'multipart/form-data'}
+    });
+};
+
+export const getMenus = async()=>{
+    return await axiosRestaurant.get('/menu');
+};
+
+export const getMenusByRestaurant = async(restaurantId)=>{
+    return await axiosRestaurant.get(`/menu/restaurant/${restaurantId}`);
+};
+
+export const updateMenu = async(id, formData)=>{
+    return await axiosRestaurant.put(`/menu/${id}`, formData,{
+        headers: {'Content-Type': 'multipart/form-data'}
+    });
+};
+
+export const deleteMenu = async(id)=>{
+    return await axiosRestaurant.delete(`/menu/${id}`);
+}
