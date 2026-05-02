@@ -1,10 +1,12 @@
 import { Routes, Route } from "react-router-dom"
 import { AuthPage } from "../../features/auth/pages/AuthPage.jsx"
+import { Menus } from "../../features/menus/components/Menus.jsx"
 import { ResetPasswordPage } from "../../features/auth/pages/ResetPasswordPage.jsx"
 import { DashboardPage } from "../layouts/DashboardPage.jsx"
 import { ProtectedRoutes } from "./ProtectedRoutes.jsx"
 import { UnauthorizedPage } from '../../features/auth/pages/UnauthorizedPage.jsx'
 import { Restaurants } from "../../features/restaurants/components/Restaurants.jsx"
+import { RestaurantMenus } from "../../features/menus/components/RestaurantMenu.jsx"
 import { Users } from "../../features/users/components/Users.jsx"
 import { RoleGuard } from "./RoleGuard.jsx"
 import { UserPage } from "../../features/users/pages/UserPage.jsx"
@@ -31,7 +33,12 @@ export const AppRoutes = () => {
             </RoleGuard>
           </ProtectedRoutes>
         }
-      />
+      >
+        <Route
+          path="restaurantes/:restaurantId/menu"
+          element={<RestaurantMenus />}
+        />
+      </Route>
 
       {/* Vista para ADMIN_ROLE y RES_ADMIN_ROLE */}
       <Route
@@ -71,6 +78,16 @@ export const AppRoutes = () => {
               <Reservations />
             </RoleGuard>
           }
+        />
+
+        <Route
+          path="menu"
+          element={<Menus />}
+        />
+
+        <Route
+          path="restaurantes/:restaurantId/menu"
+          element={<RestaurantMenus />}
         />
       </Route>
     </Routes>
