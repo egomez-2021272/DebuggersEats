@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRestaurantStore } from "../store/restaurantStore";
 import { Spinner } from "../../auth/components/Spinner.jsx";
 import { RestaurantModal } from "./RestaurantModal.jsx";
@@ -28,6 +29,7 @@ const dimmer = { color: 'rgba(255,255,255,0.3)' };
 const pill = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' };
 
 export const Restaurants = () => {
+    const navigate = useNavigate();
     const { restaurants, loading, error, getRestaurants, deleteRestaurant } = useRestaurantStore();
     const { saveRestaurant } = useSaveRestaurant();
     const [openModal, setOpenModal] = useState(false);
@@ -35,11 +37,13 @@ export const Restaurants = () => {
     const [filterCategory, setFilterCategory] = useState('ALL');
     const [search, setSearch] = useState('');
     const [expandedId, setExpandedId] = useState(null);
-    const [saving, setSaving] = useState(false);  
+    const [saving, setSaving] = useState(false);
+    const [saving, setSaving] = useState(false);
     const { openConfirm } = useUIStore();
-    const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN_ROLE');
+    const role = useAuthStore((s) => s.user?.role);
+    const isAdmin = role === 'ADMIN_ROLE';
 
-    useEffect(() => { getRestaurants(); }, [getRestaurants]);
+    useEffect(() => { getRestaurants(); }, []);
     useEffect(() => { if (error) showError(error); }, [error]);
 
     const handleSave = async (formData, restaurantId) => {
@@ -151,11 +155,24 @@ export const Restaurants = () => {
 
                                     {isExpanded && (
                                         <div className="mt-2 space-y-1.5 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                                            {restaurant.phone && <p className="text-xs" style={dim}>{restaurant.phone}</p>}
-                                            {restaurant.contactInfo?.email && <p className="text-xs" style={dim}>{restaurant.contactInfo.email}</p>}
+                                            {restaurant.phone && <p className="text-xs" style={dim}>Número Telefónico: {restaurant.phone}</p>}
+                                            {restaurant.contactInfo?.email && <p className="text-xs" style={dim}>Correo: {restaurant.contactInfo.email}</p>}
                                         </div>
                                     )}
 
+                                    <button
+                                        className="flex-1 py-1.5 rounded-lg text-sm font-medium transition bg-white/[0.06] hover:bg-white/10 text-white/70"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); if (role === "USER_ROLE") {
+                                                navigate(`/home/restaurantes/${restaurant._id}/menu`);
+                                            } else {
+                                                navigate(`/dashboard/restaurantes/${restaurant._id}/menu`);
+                                            }
+                                        }}
+                                    >
+                                        Ver menú
+                                    </button>
+                                    
                                     {isAdmin && (
                                         <div className="flex gap-2 mt-auto pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                                             <button
