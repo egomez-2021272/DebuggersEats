@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 
 const menuSchema = new Schema({
-    name:{
+    name: {
         type: String,
         required: [true, 'El nombre del menú es obligatorio'],
         trim: true,
@@ -11,7 +11,11 @@ const menuSchema = new Schema({
         type: String,
         default: null
     },
-    description:{
+    publicId: {
+        type: String,
+        default: null
+    },
+    description: {
         type: String,
         trim: true,
         maxLength: [255, 'La descripción no puede exceder de 255 caracteres']
@@ -20,39 +24,39 @@ const menuSchema = new Schema({
         type: [String],
         default: []
     },
-    price:{
+    price: {
         type: Number,
         required: [true, 'El precio es obligatorio'],
         min: [0, 'El precio no puede ser negativo']
     },
-    category:{
+    category: {
         type: String,
         required: [true, 'La categoría es obligatoria'],
-        enum:{
-            values: ['DESAYUNO','ALMUERZO','CENA','BEBIDA','POSTRE'],
+        enum: {
+            values: ['DESAYUNO', 'ALMUERZO', 'CENA', 'BEBIDA', 'POSTRE'],
             message: 'Categoría no válida'
         }
     },
-    availability:{//Días disponibles
+    availability: {//Días disponibles
         days: {
             type: [String],
             enum: ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'],
             default: []
         }
     },
-    restaurantId:{
+    restaurantId: {
         type: Schema.Types.ObjectId,
         required: [true, 'El restaurante es obligatorio'],
         ref: 'Restaurant'
     },
-    available:{
+    available: {
         type: Boolean,
         default: true
     }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 export default model('Menu', menuSchema);

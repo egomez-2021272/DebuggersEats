@@ -3,7 +3,6 @@ import { createMenu, getMenus, getMenuById, updateMenu, deleteMenu, getMenusByRe
 
 import { validateJWT } from '../../middlewares/validate-jwt.js'
 import { validateRole } from '../../middlewares/validate-role.js';
-//import { getMenuByIdService } from './menu.services.js';
 import { uploadMenuPhoto as uploadMenuPhotoMiddleware, handleUploadError } from '../../middlewares/file-uploader.js';
 
 
@@ -290,6 +289,8 @@ router.put(
     '/:id',
     validateJWT,
     validateRole('RES_ADMIN_ROLE'),
+    uploadMenuPhotoMiddleware.single('photo'),
+    handleUploadError,
     updateMenu
 );
 
