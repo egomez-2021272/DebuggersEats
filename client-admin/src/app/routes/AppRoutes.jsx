@@ -54,6 +54,22 @@ export const AppRoutes = () => {
             </RoleGuard>
           }
         />
+        <Route
+          path="events"
+          element={
+            <RoleGuard allowedRoles={["ADMIN_ROLE", "RES_ADMIN_ROLE"]}>
+              <Events />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="reservations"
+          element={
+            <RoleGuard allowedRoles={["ADMIN_ROLE", "RES_ADMIN_ROLE"]}>
+              <Reservations />
+            </RoleGuard>
+          }
+        />
       </Route>
     </Routes>
   )
