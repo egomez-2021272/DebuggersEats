@@ -64,8 +64,10 @@ export const getMenusByRestaurant = async (req, res) => {
 
 export const updateMenu = async (req, res) => {
     try {
-        const menu = await updateMenuService(req.params.id, req.body);
-
+        const menu = await updateMenuService(
+            req.params.id,
+            req.body,
+            req.file);
         res.status(200).json({
             success: true,
             message: 'Menu actualizado',
