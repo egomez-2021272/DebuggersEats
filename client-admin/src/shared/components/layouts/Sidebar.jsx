@@ -12,6 +12,7 @@ export const Sidebar = () => {
         { label: 'Eventos', to: "/dashboard/events", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Pedidos', to: "/dashboard/orders", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Reservaciones', to: "/dashboard/reservations", roles: ['RES_ADMIN_ROLE'] },
+        { label: 'Mesas', to: "/dashboard/tables", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Reseñas', to: "/dashboard/reviews", roles: ['RES_ADMIN_ROLE'] },
     ];
 

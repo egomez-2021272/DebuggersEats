@@ -13,6 +13,7 @@ import { UserPage } from "../../features/users/pages/UserPage.jsx"
 import { VerifyEmailPage } from '../../features/auth/pages/VerifyEmailPage.jsx'
 import { Events } from "../../features/events/components/Events.jsx"
 import { Reservations } from "../../features/reservations/components/Reservation.jsx"
+import { Tables } from "../../features/tables/components/Tables.jsx"
 
 
 export const AppRoutes = () => {
@@ -86,8 +87,12 @@ export const AppRoutes = () => {
         />
 
         <Route
-          path="restaurantes/:restaurantId/menu"
-          element={<RestaurantMenus />}
+          path="tables"
+          element={
+            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
+              <Tables />
+            </RoleGuard>
+          }
         />
       </Route>
     </Routes>
