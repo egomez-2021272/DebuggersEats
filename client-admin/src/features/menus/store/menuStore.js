@@ -4,8 +4,7 @@ import {
     createMenu as createMenuRequest,
     getMenusByRestaurant as getMenusByRestaurantRequest,
     updateMenu as updateMenuRequest,
-    deleteMenu as deleteMenuRequest,
-    uploadMenuPhoto as uploadMenuPhotoRequest
+    deleteMenu as deleteMenuRequest
 } from "../../../shared/apis";
 
 export const useMenuStore = create((set, get) => ({
@@ -87,24 +86,4 @@ export const useMenuStore = create((set, get) => ({
             });
         }
     },
-
-    uploadMenuPhoto: async (id, formData) => {
-        try {
-            set({ loading: true, error: null });
-
-        const response = await uploadMenuPhotoRequest(id, formData);
-        const updatedMenu = response.data.data;
-        set((state) => ({
-            menus: state.menus.map((m) => m._id === id ? updatedMenu : m
-            ),
-            loading: false,
-        }));
-        return updatedMenu;
-        } catch (err) {
-            set({
-                error: err.response?.data?.message || "Error al subir la imagen.",
-                loading: false,
-            });
-        }
-    }
 }))
