@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import {
     login as loginRequest,
     register as registerRequest,
+    createUser as createUserRequest,
 } from '../../../shared/apis';
 import { showError } from '../../../shared/utils/toast.js';
 
@@ -31,7 +32,7 @@ export const useAuthStore = create(
                         token: null,
                         refreshToken: null,
                         expiresAt: null,
-                        isLoadingAuth: true,
+                        isLoadingAuth: false,
                         isAuthenticated: false,
                         error: 'No tienes permiso para acceder a esta aplicación',
                     });
@@ -42,6 +43,22 @@ export const useAuthStore = create(
                     isLoadingAuth: false,
                     isAuthenticated: Boolean(token) && hasAccess,
                 });
+            },
+
+            createUser: async (userData) => {
+                try {
+                    set({ loading: true, error: null });
+                    const { data } = await createUserRequest(userData);
+                    set({ loading: false });
+                    return { success: true, data };
+                } catch (err) {
+                    const message = err.response?.data?.errors?.[0]?.message
+                        || err.response?.data?.error
+                        || err.response?.data?.message
+                        || 'Error al crear el usuario';
+                    set({ error: message, loading: false });
+                    return { success: false, error: message };
+                }
             },
 
             logout: () => {
@@ -69,7 +86,7 @@ export const useAuthStore = create(
                             token: null,
                             refreshToken: null,
                             expiresAt: null,
-                            isLoadingAuth: true,
+                            isLoadingAuth: false, 
                             isAuthenticated: false,
                             error: message,
                         });
@@ -112,6 +129,18 @@ export const useAuthStore = create(
                 }
             },
         }),
-        { name: 'auth-DBE-admin' },
+        {
+            name: 'auth-DBE-admin',
+            partialize: (state) => ({
+                user: state.user,
+                token: state.token,
+                refreshToken: state.refreshToken,
+                expiresAt: state.expiresAt,
+                isAuthenticated: state.isAuthenticated,
+            }),
+            onRehydrateStorage: () => (state) => {
+                if (state) state.checkAuth();
+            },
+        },
     ),
 );

@@ -19,6 +19,8 @@ export const LoginForm = ({ onForgot, onRegister }) => {
             showSuccess('Bienvenido a DebuggersEats');
             if (res.role === 'USER_ROLE') {
                 navigate('/home');
+            } else if (res.role === 'RES_ADMIN_ROLE') {
+                navigate('/dashboard/menu');
             } else {
                 navigate('/dashboard/restaurants');
             }
@@ -27,62 +29,44 @@ export const LoginForm = ({ onForgot, onRegister }) => {
         }
     };
 
-    const inputStyle = {
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        color: '#fff',
-        borderRadius: '8px',
-    };
-
-    const labelStyle = {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: '0.7rem',
-        fontWeight: '600',
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-    };
-
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-6 pb-6">
             <div>
-                <label htmlFor="username" style={labelStyle} className="block mb-1.5">
+                <label htmlFor="username" className="dbe-label mb-1.5">
                     Correo o usuario
                 </label>
                 <input
                     type="text"
                     id="username"
                     placeholder="usuario@email.com"
-                    className="w-full px-3 py-2.5 text-sm outline-none transition focus:border-pink-400"
-                    style={inputStyle}
+                    className="dbe-input w-full px-3 py-2.5 text-sm transition"
                     {...register("username", { required: "Este campo es obligatorio" })}
                 />
                 {errors.username && (
-                    <p className="text-xs mt-1" style={{ color: '#F2509C' }}>{errors.username.message}</p>
+                    <p className="dbe-error">{errors.username.message}</p>
                 )}
             </div>
 
             <div>
-                <label htmlFor="password" style={labelStyle} className="block mb-1.5">
+                <label htmlFor="password" className="dbe-label mb-1.5">
                     Contraseña
                 </label>
                 <input
                     type="password"
                     id="password"
                     placeholder="••••••••"
-                    className="w-full px-3 py-2.5 text-sm outline-none transition focus:border-pink-400"
-                    style={inputStyle}
+                    className="dbe-input w-full px-3 py-2.5 text-sm transition"
                     {...register("password", { required: "Este campo es obligatorio" })}
                 />
                 {errors.password && (
-                    <p className="text-xs mt-1" style={{ color: '#F2509C' }}>{errors.password.message}</p>
+                    <p className="dbe-error">{errors.password.message}</p>
                 )}
             </div>
 
             <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition mt-2 dbe-btn-primary"
-                style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+                className="dbe-btn-primary w-full py-2.5 text-sm mt-2"
             >
                 {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>

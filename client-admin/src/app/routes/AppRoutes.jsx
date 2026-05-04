@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
 import { AuthPage } from "../../features/auth/pages/AuthPage.jsx"
 import { Menus } from "../../features/menus/components/Menus.jsx"
 import { ResetPasswordPage } from "../../features/auth/pages/ResetPasswordPage.jsx"
@@ -10,11 +10,14 @@ import { RestaurantMenus } from "../../features/menus/components/RestaurantMenu.
 import { Users } from "../../features/users/components/Users.jsx"
 import { RoleGuard } from "./RoleGuard.jsx"
 import { UserPage } from "../../features/users/pages/UserPage.jsx"
+import { UserHome } from "../../features/users/pages/UserHome.jsx"
 import { VerifyEmailPage } from '../../features/auth/pages/VerifyEmailPage.jsx'
+import { Review } from "../../features/review/components/Review.jsx"
 import { Events } from "../../features/events/components/Events.jsx"
 import { Reservations } from "../../features/reservations/components/Reservation.jsx"
 import { Tables } from "../../features/tables/components/Tables.jsx"
-
+import { MyReviews } from "../../features/users/pages/MyReviews.jsx"
+import { UserEventsSection } from "../../features/events/components/UserEventsSection.jsx"
 
 export const AppRoutes = () => {
   return (
@@ -35,11 +38,16 @@ export const AppRoutes = () => {
           </ProtectedRoutes>
         }
       >
-        <Route
-          path="restaurantes/:restaurantId/menu"
-          element={<RestaurantMenus />}
-        />
+        <Route index element={<UserHome />} />
+        <Route path="restaurantes" element={<Restaurants />} />
+        <Route path="restaurantes/:restaurantId/menu" element={<RestaurantMenus />} />
+        <Route path="eventos" element={<UserEventsSection />} />
+        <Route path="reservaciones" element={<Reservations />} />
+        <Route path="resenas" element={<MyReviews />} />
+        <Route path="ordenes" element={<div style={{ color: '#fff', padding: 24 }}>Mis Órdenes</div>} />
       </Route>
+
+      <Route path="restaurantes/:restaurantId/menu" element={<RestaurantMenus />} />
 
       {/* Vista para ADMIN_ROLE y RES_ADMIN_ROLE */}
       <Route
@@ -52,48 +60,14 @@ export const AppRoutes = () => {
           </ProtectedRoutes>
         }
       >
-        <Route
-          path="restaurants"
-          element={<Restaurants />}
-        />
-        <Route
-          path="users"
-          element={
-            <RoleGuard allowedRoles={["ADMIN_ROLE"]}>
-              <Users />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="events"
-          element={
-            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
-              <Events />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="reservations"
-          element={
-            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
-              <Reservations />
-            </RoleGuard>
-          }
-        />
-
-        <Route
-          path="menu"
-          element={<Menus />}
-        />
-
-        <Route
-          path="tables"
-          element={
-            <RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}>
-              <Tables />
-            </RoleGuard>
-          }
-        />
+        <Route path="restaurants" element={<Restaurants />} />
+        <Route path="users" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Users /></RoleGuard>} />
+        <Route path="tables" element={<RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}><Tables /></RoleGuard>} />
+        <Route path="reviews" element={<RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}><Review /></RoleGuard>} />
+        <Route path="events" element={<RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}><Events /></RoleGuard>} />
+        <Route path="menu" element={<Menus />} />
+        <Route path="restaurantes/:restaurantId/menu" element={<RestaurantMenus />} />
+        <Route path="reservations" element={<RoleGuard allowedRoles={["RES_ADMIN_ROLE"]}><Reservations /></RoleGuard>} />
       </Route>
     </Routes>
   )
