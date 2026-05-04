@@ -86,7 +86,7 @@ export const useAuthStore = create(
                             token: null,
                             refreshToken: null,
                             expiresAt: null,
-                            isLoadingAuth: false, 
+                            isLoadingAuth: false,
                             isAuthenticated: false,
                             error: message,
                         });
@@ -97,8 +97,8 @@ export const useAuthStore = create(
                     set({
                         user: data.data.user,
                         token: data.data.token,
-                        refreshToken: null,
-                        expiresAt: null,
+                        refreshToken: data.data.refreshToken,  // ← cambiado
+                        expiresAt: data.data.expiresIn,         // ← cambiado
                         isAuthenticated: true,
                         loading: false,
                         error: null,

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createUser, registerUser, activateAccount, login, updatePassword, forgotPassword, resetPasswordController, updateProfile, getUsers, getUserById, toggleUserStatus, deleteUser } from './user.controller.js';
 import { validateCreateUser, validateLogin, validateChangePassword, validateForgotPassword, validateResetPassword } from '../middlewares/user-validator.js';
+import { refreshTokenController, logoutController, logoutAllController } from './refresh-token.controller.js';
 import { validateJWT } from '../middlewares/validate-JWT.js';
 import { validateRole } from '../middlewares/validate-role.js';
 const router = Router();
@@ -246,7 +247,7 @@ router.post('/reset-password/:token', validateResetPassword, resetPasswordContro
  *       409:
  *         description: El email o username ya existe
  */
-router.post('/register',  registerUser);
+router.post('/register', registerUser);
 
 /**
  * @swagger
@@ -636,4 +637,99 @@ router.delete(
     validateRole('ADMIN_ROLE'),
     deleteUser
 );
+
+/**
+ * @swagger
+ * /debuggersEatsAdmin/v1/auth/refresh:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Renovar tokens
+ *     description: |
+ *       Rota el refresh token y devuelve un nuevo par (accessToken + refreshToken).
+ *       Si el token ya fue usado anteriormente, revoca toda la familia de tokens
+ *       (detección de robo de sesión).
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Refresh token recibido en el login
+ *     responses:
+ *       200:
+ *         description: Tokens renovados exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 expiresIn:
+ *                   type: number
+ *                   example: 900
+ *       401:
+ *         description: Token inválido, expirado o sesión comprometida
+ */
+router.post(
+    '/refresh',
+    refreshTokenController
+);
+
+/**
+ * @swagger
+ * /debuggersEatsAdmin/v1/auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Cerrar sesión
+ *     description: Revoca el refresh token actual
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada exitosamente
+ */
+router.post(
+    '/logout',
+    logoutController
+);
+
+/**
+ * @swagger
+ * /debuggersEatsAdmin/v1/auth/logout-all:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Cerrar sesión en todos los dispositivos
+ *     description: Revoca todos los refresh tokens del usuario autenticado
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todas las sesiones cerradas
+ *       401:
+ *         description: No autorizado
+ */
+router.post(
+    '/logout-all',
+    validateJWT,
+    logoutAllController
+);
+
 export default router;

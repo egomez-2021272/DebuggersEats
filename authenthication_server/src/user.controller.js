@@ -1,4 +1,5 @@
 import { createUserRecord, registerUserRecord, activateUserAccount, loginUser, changePassword, requestPasswordReset, resetPassword, updateProfileRecord, getAllUsersRecord, getUserByIdRecord, toggleUserStatusRecord, deleteUserRecord } from "./user.services.js";
+import { createRefreshToken } from './refresh-token.service.js';
 import jwt from 'jsonwebtoken';
 
 export const createUser = async (req, res) => {
@@ -67,18 +68,24 @@ export const login = async (req, res) => {
 
         const user = await loginUser(username, password);
 
-        const token = jwt.sign(
+        //Access token
+        const accessToken = jwt.sign(
             {
                 id: user._id,
                 username: user.username,
-                role: user.role
+                role: user.role,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+                expiresIn: '15m', 
                 issuer: process.env.JWT_ISSUER,
-                audience: process.env.JWT_AUDIENCE
+                audience: process.env.JWT_AUDIENCE,
             }
+        );
+
+        //Refresh token
+        const { rawToken: refreshToken } = await createRefreshToken(
+            user._id.toString()
         );
 
         res.status(200).json({
@@ -86,17 +93,20 @@ export const login = async (req, res) => {
             message: 'Login exitoso',
             data: {
                 user,
-                token
-            }
+                token: accessToken,
+                accessToken,
+                refreshToken,
+                expiresIn: 900,
+            },
         });
     } catch (e) {
         res.status(401).json({
             success: false,
             message: 'Error al iniciar sesión',
-            error: e.message
+            error: e.message,
         });
-    }//trycatch
-};//login
+    }
+};
 
 
 export const updatePassword = async (req, res) => {
