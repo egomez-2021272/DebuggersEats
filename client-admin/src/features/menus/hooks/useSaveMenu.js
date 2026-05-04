@@ -3,7 +3,7 @@ import { useMenuStore } from "../store/menuStore.js";
 export const useSaveMenu = () => {
     const createMenu = useMenuStore((s) => s.createMenu);
     const updateMenu = useMenuStore((s) => s.updateMenu);
-    
+
     const saveMenu = async (data, menuId = null) => {
         const formData = new FormData();
         const days = data['availability.days'] || [];
@@ -17,7 +17,7 @@ export const useSaveMenu = () => {
         if (data.description) formData.append('description', data.description);
         if (data.ingredients) formData.append('ingredients', data.ingredients);
         if (data.restaurantId) formData.append('restaurantId', data.restaurantId);
-        
+
         if (Array.isArray(days)) {
             days.forEach((d) => formData.append('availability[days][]', d));
         } else if (days) {

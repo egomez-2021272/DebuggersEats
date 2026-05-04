@@ -11,8 +11,9 @@ import { MenuFilters } from './MenuFilters.jsx';
 import { MenuModal } from './MenuModal.jsx';
 import { showError } from '../../../shared/utils/toast.js';
 
-export const RestaurantMenus = () => {
-    const { restaurantId } = useParams();
+export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
+    const { restaurantId: paramId } = useParams();
+    const restaurantId = propId || paramId;
     const navigate = useNavigate();
     const { menus, loading, error, getMenusByRestaurant, deleteMenu } = useMenuStore();
     const { saveMenu } = useSaveMenu();
@@ -23,6 +24,7 @@ export const RestaurantMenus = () => {
     const [saving, setSaving] = useState(false);
     const { category, setCategory, search, setSearch, filtered } =
         useCategoryFilter(menus, ['name', 'description']);
+
     useEffect(() => {
         if (restaurantId) getMenusByRestaurant(restaurantId);
     }, [restaurantId, getMenusByRestaurant]);
@@ -43,12 +45,21 @@ export const RestaurantMenus = () => {
         onConfirm: () => deleteMenu(menu._id),
     });
 
+    const handleBack = () => {
+        if (onBack) {
+            onBack();
+        } else {
+            navigate(-1);
+        }
+    };
+
     if (loading && menus.length === 0) return <Spinner />;
+
     return (
         <section className="p-4">
             <nav aria-label="Breadcrumb" className="mb-4">
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={handleBack}
                     className="text-sm text-white/50 hover:text-white transition flex items-center gap-1"
                 >
                     ← Volver a restaurantes
@@ -72,10 +83,12 @@ export const RestaurantMenus = () => {
                     </button>
                 )}
             </header>
+
             <MenuFilters
                 search={search} onSearch={setSearch}
                 category={category} onCategory={setCategory}
             />
+
             {filtered.length === 0 ? (
                 <p className="rounded-xl p-6 text-center text-sm text-white/30 bg-[#16161f] border border-white/[0.06]">
                     No hay platos para mostrar.
@@ -94,6 +107,7 @@ export const RestaurantMenus = () => {
                     ))}
                 </ul>
             )}
+
             <MenuModal
                 isOpen={openModal}
                 onClose={() => { setOpenModal(false); setSelected(null); }}

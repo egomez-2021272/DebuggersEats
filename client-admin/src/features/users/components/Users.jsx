@@ -6,6 +6,7 @@ import { CreateUserModal } from "./CreateUserModal.jsx";
 import { useUIStore } from "../../auth/store/uiStore.js";
 import { showError, showSuccess } from "../../../shared/utils/toast.js";
 import { formatDate } from "../../../shared/utils/formatters.js";
+import { useRestaurantStore } from "../../restaurants/store/restaurantStore.js";
 
 const PAGE_SIZE = 8;
 
@@ -26,9 +27,15 @@ export const Users = () => {
     const [page, setPage] = useState(1);
     const [openCreateModal, setOpenCreateModal] = useState(false);
 
+    const { restaurants, getRestaurants } = useRestaurantStore();//Para asignar res-admin
+
     useEffect(() => {
         getAllUsers();
     }, [getAllUsers]);
+
+    useEffect(() => {
+        getRestaurants();
+    }, []);
 
     useEffect(() => {
         if (error) {
@@ -257,6 +264,7 @@ export const Users = () => {
                 onClose={() => setOpenCreateModal(false)}
                 onCreate={handleCreate}
                 loading={authLoading}
+                restaurants={restaurants}
             />
         </div>
     );

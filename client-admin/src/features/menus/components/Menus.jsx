@@ -1,42 +1,51 @@
 import { useEffect, useState } from 'react';
 import { useMenuStore } from '../store/menuStore.js';
-import { useAuthStore }from '../../auth/store/authStore.js';
-import { useUIStore }from '../../auth/store/uiStore.js';
+import { useAuthStore } from '../../auth/store/authStore.js';
+import { useUIStore } from '../../auth/store/uiStore.js';
 import { useSaveMenu } from '../hooks/useSaveMenu.js';
-import { useCategoryFilter }from '../hooks/useCategoryFilter.js';
+import { useCategoryFilter } from '../hooks/useCategoryFilter.js';
 import { Spinner } from '../../auth/components/Spinner.jsx';
 import { MenuCard } from './MenuCard.jsx';
 import { MenuModal } from './MenuModal.jsx';
 import { MenuFilters } from './MenuFilters.jsx';
-import { showError }from '../../../shared/utils/toast.js';
-import {useRestaurantStore} from '../../restaurants/store/restaurantStore.js'
+import { showError } from '../../../shared/utils/toast.js';
 
 export const Menus = () => {
-    const { menus, loading, error, getMenus, deleteMenu } = useMenuStore();
+    const { menus, loading, error, getMenusByRestaurant, deleteMenu } = useMenuStore();
     const { saveMenu } = useSaveMenu();
     const { openConfirm } = useUIStore();
-    const isAdmin = useAuthStore((s) => s.user?.role === 'RES_ADMIN_ROLE');
-    const [openModal, setOpenModal]= useState(false);
-    const [selected, setSelected]= useState(null);
-    const [saving,setSaving]= useState(false);
-    const { category,setCategory, search, setSearch,filtered } =useCategoryFilter(menus, ['name', 'description']);
-    const {restaurants, getRestaurants} = useRestaurantStore();
+    const user = useAuthStore((s) => s.user);
+    const isAdmin = user?.role === 'RES_ADMIN_ROLE';
 
-    useEffect(() => { getMenus(); }, [getMenus]);
+    const restaurantId = user?.restaurantId;
+
+    const [openModal, setOpenModal] = useState(false);
+    const [selected, setSelected] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const { category, setCategory, search, setSearch, filtered } =
+        useCategoryFilter(menus, ['name', 'description']);
+
+    useEffect(() => {
+        if (restaurantId) getMenusByRestaurant(restaurantId);
+    }, [restaurantId, getMenusByRestaurant]);
+
     useEffect(() => { if (error) showError(error); }, [error]);
-    useEffect(() => { getRestaurants(); }, [getRestaurants])
 
     const handleSave = async (data, menuId) => {
         setSaving(true);
         const ok = await saveMenu(data, menuId);
+        if (ok) getMenusByRestaurant(restaurantId);
         setSaving(false);
         return ok;
     };
 
     const handleDelete = (menu) => openConfirm({
-        title:'Eliminar plato',
-        message:`¿Eliminar "${menu.name}"? Esta acción no se puede deshacer.`,
-        onConfirm: () => deleteMenu(menu._id),
+        title: 'Eliminar plato',
+        message: `¿Eliminar "${menu.name}"? Esta acción no se puede deshacer.`,
+        onConfirm: async () => {
+            await deleteMenu(menu._id);
+            getMenusByRestaurant(restaurantId);
+        },
     });
 
     if (loading && menus.length === 0) return <Spinner />;
@@ -56,14 +65,14 @@ export const Menus = () => {
                         style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
                         onClick={() => { setSelected(null); setOpenModal(true); }}
                     >
-                        + Nuevo plato
+                        Nuevo plato
                     </button>
                 )}
             </header>
 
             <MenuFilters
-                search={search}onSearch={setSearch}
-                category={category}onCategory={setCategory}
+                search={search} onSearch={setSearch}
+                category={category} onCategory={setCategory}
             />
 
             {filtered.length === 0 ? (
@@ -84,13 +93,14 @@ export const Menus = () => {
                     ))}
                 </ul>
             )}
+
             <MenuModal
                 isOpen={openModal}
                 onClose={() => { setOpenModal(false); setSelected(null); }}
                 menu={selected}
                 onSave={handleSave}
                 loading={saving}
-                restaurants = {restaurants}
+                restaurantId={restaurantId}
             />
         </section>
     );

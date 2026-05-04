@@ -17,7 +17,7 @@ export const createReservation = async (req, res) => {
             confirmationToken: result.confirmationToken,
             tokenExpiresAt: result.tokenExpiresAt
         });
-    } catch(e) {
+    } catch (e) {
         res.status(e.statusCode || 500).json({
             success: false,
             message: e.message || 'Error al crear la reservación'
@@ -133,7 +133,7 @@ export const checkDisponibilidad = async (req, res) => {
         const reservedSet = new Set(reservedTableIds.map(id => id.toString()));
 
         const availableTables = allTables.filter(t => !reservedSet.has(t._id.toString()));
-        const occupiedTables  = allTables.filter(t => reservedSet.has(t._id.toString()));
+        const occupiedTables = allTables.filter(t => reservedSet.has(t._id.toString()));
 
         res.json({
             success: true,
@@ -154,8 +154,8 @@ export const checkDisponibilidad = async (req, res) => {
                 mensaje: availableTables.length === 0
                     ? 'No hay mesas disponibles para esa fecha y hora'
                     : availableTables.length <= 2
-                    ? `¡Solo quedan ${availableTables.length} mesa(s) disponible(s)!`
-                    : `Hay ${availableTables.length} mesas disponibles`
+                        ? `¡Solo quedan ${availableTables.length} mesa(s) disponible(s)!`
+                        : `Hay ${availableTables.length} mesas disponibles`
             }
         });
     } catch (e) {
@@ -178,6 +178,7 @@ export const getReservationsByRestaurant = async (req, res) => {
         }
 
         const reservations = await Reservation.find(query)
+            .select('+confirmationToken')
             .populate('tableId', 'tableNumber capacity location')
             .sort({ reservationDate: 1, reservationHour: 1 });
 

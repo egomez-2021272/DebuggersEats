@@ -7,11 +7,16 @@ const restaurantSchema = new Schema({
         trim: true,
         maxLength: [100, 'Máximo 100 caracteres']
     },
+    assignedAdmin: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     photo: {//Imagen del restaurante
         type: String,
         default: null
     },
-    capacity:{
+    capacity: {
         type: Number,
         required: [true, 'La capacidad del restaurante es obligatorio.'],
         min: [20, 'Capacidad mínima admitida es de 20']
@@ -27,7 +32,7 @@ const restaurantSchema = new Schema({
     phone: {
         type: String,
         required: [true, 'El teléfono es obligatorio'],
-        match:[/^\d{8}$/, 'El teléfono debe de tener 8 digítos únicamente']
+        match: [/^\d{8}$/, 'El teléfono debe de tener 8 digítos únicamente']
 
     },
     category: {//Categoría gastronómica

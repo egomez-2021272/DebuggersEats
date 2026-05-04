@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useReservationStore } from '../store/reservationStore.js';
 
@@ -26,14 +25,9 @@ const Section = ({ title, children }) => (
 );
 
 const INIT = {
-    peopleName: '',
-    restaurantName: '',
-    restaurantId: '',
-    reservationDate: '',
-    reservationHour: '',
-    peopleNumber: 1,
-    tableId: '',
-    observation: '',
+    peopleName: '', restaurantName: '', restaurantId: '',
+    reservationDate: '', reservationHour: '',
+    peopleNumber: 1, tableId: '', observation: '',
 };
 
 export const ReservationModal = ({ reservation, restaurants, onSave, onClose, saving }) => {
@@ -57,9 +51,7 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
     const [error, setError] = useState('');
     const [dispInfo, setDispInfo] = useState(null);
     const [checkingDisp, setCheckingDisp] = useState(false);
-    const [tokenResult, setTokenResult] = useState(null);
 
-    // Cargar mesas cuando se selecciona restaurante
     useEffect(() => {
         if (form.restaurantId) {
             fetchTables(form.restaurantId);
@@ -98,9 +90,8 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         if (!form.reservationDate) return setError('La fecha es requerida.');
         if (!form.reservationHour) return setError('La hora es requerida.');
         if (!form.tableId) {
-            if (tables.length === 0 && form.restaurantId) {
+            if (tables.length === 0 && form.restaurantId)
                 return setError('Este restaurante no tiene mesas registradas. Crea mesas primero desde el panel de Mesas.');
-            }
             return setError('Selecciona una mesa.');
         }
         if (!form.peopleNumber || form.peopleNumber < 1) return setError('El número de personas es requerido.');
@@ -116,46 +107,9 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         };
 
         const res = await onSave(payload, isEdit ? reservation._id : null);
-
-        if (res?.success && !isEdit && res.confirmationToken) {
-            setTokenResult({ token: res.confirmationToken, expiresAt: res.tokenExpiresAt });
-        } else if (!res?.success) {
-            setError(res?.error || 'Error al guardar');
-        }
+        if (!res?.success) setError(res?.error || 'Error al guardar');
     };
 
-    // Pantalla de token de confirmación (solo al crear)
-    if (tokenResult) {
-        return (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-                <div style={{ background: '#111118', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 16, maxWidth: 480, width: '100%', padding: '32px 28px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
-                    <h2 style={{ color: '#4ade80', fontWeight: 700, fontSize: 18, margin: '0 0 6px' }}>¡Reservación creada!</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, margin: '0 0 24px' }}>
-                        Usa el token para confirmar o cancelar la reservación.
-                    </p>
-
-                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '14px 16px', marginBottom: 20, textAlign: 'left' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 6px' }}>Token de confirmación</p>
-                        <code style={{ color: '#F2509C', fontSize: 12, wordBreak: 'break-all', lineHeight: 1.6 }}>
-                            {tokenResult.token}
-                        </code>
-                        {tokenResult.expiresAt && (
-                            <p style={{ color: 'rgba(251,191,36,0.7)', fontSize: 11, margin: '8px 0 0' }}>
-                                ⚠ Expira: {new Date(tokenResult.expiresAt).toLocaleString('es-GT')}
-                            </p>
-                        )}
-                    </div>
-
-                    <button onClick={onClose} style={{ width: '100%', background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', borderRadius: 10, padding: '11px 0', cursor: 'pointer' }}>
-                        Entendido
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // Mesas a mostrar: si se verificó disponibilidad → las disponibles, si no → todas las del restaurante
     const mesasToShow = dispInfo ? availableTables : tables;
 
     return (
@@ -168,7 +122,6 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                 borderRadius: 16, width: '100%', maxWidth: 560,
                 maxHeight: '90vh', overflowY: 'auto', padding: '28px 28px', scrollbarWidth: 'thin',
             }}>
-                {/* Encabezado */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                     <div>
                         <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>
@@ -181,7 +134,6 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer' }}>✕</button>
                 </div>
 
-                {/* ── Info del titular ── */}
                 <Section title="Titular">
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                         <div style={{ gridColumn: '1/-1' }}>
@@ -205,14 +157,10 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                     </div>
                 </Section>
 
-                {/* ── Restaurante ── */}
                 <Section title="Restaurante">
                     <Lbl text="Restaurante" req />
-                    <select
-                        style={{ ...inputSx, cursor: 'pointer' }}
-                        value={form.restaurantId}
-                        onChange={(e) => handleRestaurantChange(e.target.value)}
-                    >
+                    <select style={{ ...inputSx, cursor: 'pointer' }} value={form.restaurantId}
+                        onChange={(e) => handleRestaurantChange(e.target.value)}>
                         <option value="">— Seleccionar restaurante —</option>
                         {restaurants.map((r) => (
                             <option key={r._id} value={r._id}>{r.name}</option>
@@ -220,33 +168,28 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                     </select>
                 </Section>
 
-                {/* ── Fecha y hora + verificar disponibilidad ── */}
                 <Section title="Fecha y hora">
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                         <div>
                             <Lbl text="Fecha" req />
-                            <input type="date" style={inputSx}
-                                value={form.reservationDate}
+                            <input type="date" style={inputSx} value={form.reservationDate}
                                 onChange={(e) => { setF('reservationDate', e.target.value); setDispInfo(null); }} />
                         </div>
                         <div>
                             <Lbl text="Hora" req />
-                            <input type="time" style={inputSx}
-                                value={form.reservationHour}
+                            <input type="time" style={inputSx} value={form.reservationHour}
                                 onChange={(e) => { setF('reservationHour', e.target.value); setDispInfo(null); }} />
                         </div>
                     </div>
 
-                    {/* Botón verificar disponibilidad */}
                     <button
                         onClick={handleCheckDisp}
                         disabled={checkingDisp || !form.restaurantName || !form.reservationDate || !form.reservationHour}
                         style={{
                             marginTop: 10, width: '100%',
-                            background: 'rgba(147,98,217,0.15)',
-                            border: '1px solid rgba(147,98,217,0.3)',
-                            color: '#9362D9', borderRadius: 8,
-                            padding: '8px 0', fontSize: 12, fontWeight: 700,
+                            background: 'rgba(147,98,217,0.15)', border: '1px solid rgba(147,98,217,0.3)',
+                            color: '#9362D9', borderRadius: 8, padding: '8px 0',
+                            fontSize: 12, fontWeight: 700,
                             cursor: checkingDisp ? 'wait' : 'pointer',
                             opacity: (!form.restaurantName || !form.reservationDate || !form.reservationHour) ? 0.4 : 1,
                             transition: 'all 0.15s',
@@ -255,7 +198,6 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                         {checkingDisp ? 'Verificando...' : '🔍 Verificar disponibilidad'}
                     </button>
 
-                    {/* Resultado disponibilidad */}
                     {dispInfo && (
                         <div style={{
                             marginTop: 10,
@@ -273,24 +215,19 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                     )}
                 </Section>
 
-                {/* ── Selección de mesa ── */}
                 <Section title="Mesa">
                     <Lbl text={dispInfo ? 'Mesas disponibles para ese horario' : 'Mesas del restaurante'} req />
                     {loadingTables ? (
                         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Cargando mesas...</p>
                     ) : mesasToShow.length === 0 ? (
-                        <div style={{
-                            background: 'rgba(251,191,36,0.06)',
-                            border: '1px solid rgba(251,191,36,0.2)',
-                            borderRadius: 8, padding: '10px 14px',
-                        }}>
+                        <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '10px 14px' }}>
                             <p style={{ color: 'rgba(251,191,36,0.85)', fontSize: 13, margin: 0 }}>
                                 {!form.restaurantId
                                     ? 'Selecciona un restaurante primero.'
                                     : dispInfo
                                         ? 'No hay mesas disponibles para ese horario. Intenta con otra fecha u hora.'
                                         : tables.length === 0
-                                            ? 'Este restaurante no tiene mesas registradas. Debes crear mesas desde el panel de Mesas antes de hacer una reservacion.'
+                                            ? 'Este restaurante no tiene mesas registradas. Debes crear mesas desde el panel de Mesas antes de hacer una reservación.'
                                             : 'No hay mesas disponibles. Verifica disponibilidad con otra fecha u hora.'}
                             </p>
                         </div>
@@ -306,8 +243,7 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                                             background: sel ? 'rgba(147,98,217,0.2)' : 'rgba(255,255,255,0.04)',
                                             border: sel ? '1px solid #9362D9' : '1px solid rgba(255,255,255,0.08)',
                                             borderRadius: 10, padding: '10px 8px',
-                                            cursor: 'pointer', textAlign: 'center',
-                                            transition: 'all 0.15s',
+                                            cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
                                         }}
                                     >
                                         <p style={{ color: sel ? '#9362D9' : '#fff', fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>
@@ -323,14 +259,12 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                     )}
                 </Section>
 
-                {/* Error */}
                 {error && (
                     <p style={{ color: '#f87171', fontSize: 13, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '8px 12px', margin: '0 0 16px' }}>
                         {error}
                     </p>
                 )}
 
-                {/* Botones */}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
                     <button onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                         Cancelar

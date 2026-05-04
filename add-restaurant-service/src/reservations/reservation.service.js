@@ -190,6 +190,7 @@ export const getReservationRecord = async (userId, filters = {}) => {
     if (filters.status) query.status = filters.status;
 
     return Reservation.find(query)
+        .select('+confirmationToken')
         .populate('tableId', 'tableNumber capacity location')
         .sort({ reservationDate: -1, reservationHour: -1 });
 };
@@ -211,9 +212,9 @@ export const updateReservationRecord = async ({ reservationId, userId, data }) =
         throw e;
     }//No se puede editar reservaciones canceladas
 
-    const newTableId   = safeData.tableId   || reservation.tableId;
-    const newDate      = safeData.reservationDate ? new Date(safeData.reservationDate) : reservation.reservationDate;
-    const newHour      = safeData.reservationHour || reservation.reservationHour;
+    const newTableId = safeData.tableId || reservation.tableId;
+    const newDate = safeData.reservationDate ? new Date(safeData.reservationDate) : reservation.reservationDate;
+    const newHour = safeData.reservationHour || reservation.reservationHour;
     const newPeopleNumber = safeData.peopleNumber || reservation.peopleNumber;
 
     //Validar nueva mesa si se está cambiando

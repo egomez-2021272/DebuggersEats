@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../../auth/store/authStore.js';
 
 const DAYS = [
     { value: 0, label: 'Dom' },
@@ -16,7 +17,6 @@ const INIT = {
     description: '',
     type: 'event',
     status: 'draft',
-    restaurant_id: '',
     schedule: {
         start_date: '',
         end_date: '',
@@ -49,15 +49,16 @@ const inputSx = {
     colorScheme: 'dark',
 };
 
-const selectSx = { 
-    ...inputSx, 
+const selectSx = {
+    ...inputSx,
     cursor: 'pointer',
-    colorScheme: 'dark' };
+    colorScheme: 'dark'
+};
 
 export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
+    const user = useAuthStore((s) => s.user);
     const isEdit = Boolean(event?._id);
 
-    // Pre-poblar formulario al editar
     const [form, setForm] = useState(() => {
         if (!event) return { ...INIT };
         return {
@@ -97,7 +98,6 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
     const handleSubmit = async () => {
         setError('');
         if (!form.name.trim()) return setError('El nombre es requerido.');
-        if (!form.restaurant_id) return setError('Selecciona un restaurante.');
         if (!form.schedule.start_date || !form.schedule.end_date) return setError('Las fechas son requeridas.');
 
         const payload = {
@@ -105,7 +105,7 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
             description: form.description.trim(),
             type: form.type,
             status: form.status,
-            restaurant_id: form.restaurant_id,
+            restaurant_id: user?.restaurantId,
             schedule: {
                 start_date: form.schedule.start_date,
                 end_date: form.schedule.end_date,
@@ -153,9 +153,6 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                         <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>
                             {isEdit ? 'Editar evento' : 'Nuevo evento gastronómico'}
                         </h2>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: '2px 0 0' }}>
-                            Solo RES_ADMIN_ROLE puede crear o editar eventos.
-                        </p>
                     </div>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer' }}>✕</button>
                 </div>
@@ -190,16 +187,6 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                                 <option value="paused">Pausado</option>
                                 <option value="expired">Expirado</option>
                                 <option value="cancelled">Cancelado</option>
-                            </select>
-                        </div>
-
-                        <div style={{ gridColumn: '1/-1' }}>
-                            {label('Restaurante', true)}
-                            <select style={selectSx} value={form.restaurant_id} onChange={(e) => set('restaurant_id', e.target.value)}>
-                                <option value="">— Seleccionar restaurante —</option>
-                                {restaurants.map((r) => (
-                                    <option key={r._id} value={r._id}>{r.name}</option>
-                                ))}
                             </select>
                         </div>
 
@@ -361,7 +348,6 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
     );
 };
 
-// Sección auxiliar
 const Section = ({ title, children }) => (
     <div style={{ marginBottom: 24 }}>
         <p style={{

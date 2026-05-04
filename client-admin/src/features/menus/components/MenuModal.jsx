@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useRestaurantStore } from '../../restaurants/store/restaurantStore.js';
+import { useAuthStore } from '../../auth/store/authStore.js';
 
 const CATEGORIES = [
     { value: 'DESAYUNO', label: 'Desayuno' },
@@ -19,10 +20,9 @@ const DAYS = [
     { value: 'VIERNES', label: 'V' },
     { value: 'SABADO', label: 'S' },
     { value: 'DOMINGO', label: 'D' },
-]
-export const MenuModal = ({ isOpen, onClose, onSave, loading,
-    error, menu, restaurantId,
-}) => {
+];
+
+export const MenuModal = ({ isOpen, onClose, onSave, loading, error, menu, restaurantId: propRestaurantId }) => {
     const {
         register,
         handleSubmit,
@@ -30,9 +30,16 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
         watch,
         formState: { errors },
     } = useForm();
+
     const [preview, setPreview] = useState(null);
     const { restaurants, getRestaurants } = useRestaurantStore();
     const [selectedDays, setSelectedDays] = useState([]);
+
+    const userRestaurantId = useAuthStore((s) => s.user?.restaurantId);
+    const isResAdmin = useAuthStore((s) => s.user?.role === 'RES_ADMIN_ROLE');
+
+    const effectiveRestaurantId = propRestaurantId || (isResAdmin ? userRestaurantId : null);
+    const needsRestaurantSelector = !effectiveRestaurantId;
 
     useEffect(() => {
         if (!isOpen) return;
@@ -45,7 +52,7 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                 ingredients: menu.ingredients?.join(', ') || '',
                 available: menu.available ?? true,
                 'availability.days': menu.availability?.days || [],
-                restaurantId: menu.restaurantId?._id || menu.restaurantId || ''
+                restaurantId: menu.restaurantId?._id || menu.restaurantId || '',
             });
             setSelectedDays(menu?.availability?.days || []);
             setPreview(menu.photo || null);
@@ -79,13 +86,14 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
     }, [watch]);
 
     useEffect(() => {
-        if (!restaurantId) getRestaurants();
-    }, [restaurantId, getRestaurants])
+        if (needsRestaurantSelector) getRestaurants();
+    }, [needsRestaurantSelector, getRestaurants]);
+
     if (!isOpen) return null;
 
     const submit = async (data) => {
         data['availability.days'] = selectedDays;
-        if (restaurantId) data.restaurantId = restaurantId;
+        data.restaurantId = effectiveRestaurantId || data.restaurantId;
         data.available = !!data.available;
         const ok = await onSave(data, menu?._id);
         if (ok) { reset(); setPreview(null); onClose(); }
@@ -108,21 +116,14 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                         Completa la información del plato
                     </p>
                 </div>
-                <form
-                    onSubmit={handleSubmit(submit)}
-                    className="p-4 sm:p-6 space-y-4 overflow-y-auto"
-                >
+
+                <form onSubmit={handleSubmit(submit)} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
                     <div className="flex justify-center">
                         <div className="w-24 h-24 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 bg-white/5">
-                            {preview ? (
-                                <img
-                                    src={preview}
-                                    alt="preview"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <span className="text-xs text-white/30">Sin imagen</span>
-                            )}
+                            {preview
+                                ? <img src={preview} alt="preview" className="w-full h-full object-cover" />
+                                : <span className="text-xs text-white/30">Sin imagen</span>
+                            }
                         </div>
                     </div>
 
@@ -139,11 +140,7 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:ring-2 focus:ring-pink-400"
                                 placeholder="Pizza Margherita"
                             />
-                            {errors.name && (
-                                <p className="text-xs text-pink-400 mt-1">
-                                    {errors.name.message}
-                                </p>
-                            )}
+                            {errors.name && <p className="text-xs text-pink-400 mt-1">{errors.name.message}</p>}
                         </div>
 
                         <div className="md:col-span-2">
@@ -172,11 +169,7 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                                 step="0.01"
                                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:ring-2 focus:ring-pink-400"
                             />
-                            {errors.price && (
-                                <p className="text-xs text-pink-400 mt-1">
-                                    {errors.price.message}
-                                </p>
-                            )}
+                            {errors.price && <p className="text-xs text-pink-400 mt-1">{errors.price.message}</p>}
                         </div>
 
                         <div>
@@ -184,25 +177,15 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                                 Categoría
                             </label>
                             <select
-                                {...register('category', {
-                                    required: 'La categoría es obligatoria',
-                                })}
+                                {...register('category', { required: 'La categoría es obligatoria' })}
                                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none cursor-pointer focus:ring-2 focus:ring-pink-400"
                             >
-                                <option value="" className="bg-[#1a1a2e]">
-                                    Seleccione una categoría
-                                </option>
+                                <option value="" className="bg-[#1a1a2e]">Seleccione una categoría</option>
                                 {CATEGORIES.map((c) => (
-                                    <option key={c.value} value={c.value} className="bg-[#1a1a2e]">
-                                        {c.label}
-                                    </option>
+                                    <option key={c.value} value={c.value} className="bg-[#1a1a2e]">{c.label}</option>
                                 ))}
                             </select>
-                            {errors.category && (
-                                <p className="text-xs text-pink-400 mt-1">
-                                    {errors.category.message}
-                                </p>
-                            )}
+                            {errors.category && <p className="text-xs text-pink-400 mt-1">{errors.category.message}</p>}
                         </div>
 
                         <div className="md:col-span-2">
@@ -224,9 +207,7 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                                     className="accent-pink-500"
                                     defaultChecked={menu?.available ?? true}
                                 />
-                                <label className="text-sm text-white/70">
-                                    Plato disponible
-                                </label>
+                                <label className="text-sm text-white/70">Plato disponible</label>
                             </div>
                         )}
 
@@ -264,52 +245,35 @@ export const MenuModal = ({ isOpen, onClose, onSave, loading,
                             />
                         </div>
 
-                        {!restaurantId && (
+                        {needsRestaurantSelector && (
                             <div className="md:col-span-2">
                                 <label className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-1 block">
                                     Restaurante
                                 </label>
                                 <select
-                                    {...register('restaurantId', {
-                                        required: 'Selecciona un restaurante',
-                                    })}
+                                    {...register('restaurantId', { required: 'Selecciona un restaurante' })}
                                     className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none cursor-pointer"
                                 >
-                                    <option value="" className="bg-[#1a1a2e]">
-                                        Seleccione un restaurante
-                                    </option>
+                                    <option value="" className="bg-[#1a1a2e]">Seleccione un restaurante</option>
                                     {restaurants?.map((r) => (
-                                        <option key={r._id} value={r._id} className="bg-[#1a1a2e]">
-                                            {r.name}
-                                        </option>
+                                        <option key={r._id} value={r._id} className="bg-[#1a1a2e]">{r.name}</option>
                                     ))}
                                 </select>
-                                {errors.restaurantId && (
-                                    <p className="text-xs text-pink-400 mt-1">
-                                        {errors.restaurantId.message}
-                                    </p>
-                                )}
+                                {errors.restaurantId && <p className="text-xs text-pink-400 mt-1">{errors.restaurantId.message}</p>}
                             </div>
                         )}
                     </div>
 
-                    {error && (
-                        <p className="text-sm text-red-400 text-center">{error}</p>
-                    )}
+                    {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
                     <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-white/10">
                         <button
                             type="button"
-                            onClick={() => {
-                                reset();
-                                setPreview(null);
-                                onClose();
-                            }}
+                            onClick={() => { reset(); setPreview(null); onClose(); }}
                             className="px-4 py-2 rounded-lg text-sm bg-white/10 text-white/60 hover:bg-white/20 transition"
                         >
                             Cancelar
                         </button>
-
                         <button
                             type="submit"
                             disabled={loading}

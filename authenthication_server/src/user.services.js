@@ -1,20 +1,53 @@
 import User from './user.model.js';
 import { hash, verify } from '@node-rs/bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import mongoose from 'mongoose';
 import { sendActivationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordChangedEmail } from '../helpers/email.helper.js';
 
 export const createUserRecord = async ({ userData }) => {
-    const hashedPassword = await hash(userData.password, 10);
+    const { restaurantId, ...rest } = userData;
+
+    const hashedPassword = await hash(rest.password, 10);
     const activationToken = uuidv4();
     const user = new User({
-        ...userData,
+        ...rest,
         password: hashedPassword,
         activationToken,
         isActive: false
     });
     await user.save();
 
-    await sendActivationEmail(user.email, activationToken, user.firstName);
+    //Asigna un restaurante si es RES_ADMIN_ROLE
+    if (rest.role === 'RES_ADMIN_ROLE' && restaurantId) {
+        const restaurant = await mongoose.connection.collection('restaurants').findOne({
+            _id: new mongoose.Types.ObjectId(restaurantId)
+        });
+
+        if (!restaurant) {
+            await User.deleteOne({ _id: user._id });
+            const e = new Error('El restaurante especificado no existe');
+            e.statusCode = 404;
+            throw e;
+        }
+
+        if (restaurant.assignedAdmin) {
+            await User.deleteOne({ _id: user._id });
+            const e = new Error('Este restaurante ya tiene un administrador asignado');
+            e.statusCode = 409;
+            throw e;
+        }
+
+        await mongoose.connection.collection('restaurants').updateOne(
+            { _id: new mongoose.Types.ObjectId(restaurantId) },
+            { $set: { assignedAdmin: new mongoose.Types.ObjectId(user._id) } }
+        );
+    }
+
+    try {
+        await sendActivationEmail(user.email, activationToken, user.firstName);
+    } catch (emailError) {
+        console.error('Error al enviar email de activación:', emailError);
+    }
 
     const userObject = user.toObject();
     delete userObject.password;
@@ -45,7 +78,7 @@ export const registerUserRecord = async ({ userData }) => {
     delete userObject.password;
     delete userObject.activationToken;
     return userObject;
-};//registerUserRecord
+};
 
 export const activateUserAccount = async (token) => {
     const user = await User.findOne({ activationToken: token });
@@ -98,6 +131,16 @@ export const loginUser = async (username, password) => {
     delete userObject.password;
     delete userObject.activationToken;
 
+    if (userObject.role === 'RES_ADMIN_ROLE') {
+        const restaurant = await mongoose.connection//relaciona restaurants con user
+            .collection('restaurants')
+            .findOne({ assignedAdmin: new mongoose.Types.ObjectId(userObject._id) });
+
+        if (restaurant) {
+            userObject.restaurantId = restaurant._id.toString();
+        }
+    }
+
     return userObject;
 };
 
@@ -115,7 +158,6 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
     }
 
     const hashedPassword = await hash(newPassword, 10);
-
     user.password = hashedPassword;
     await user.save();
     await sendPasswordChangedEmail(user.email, user.firstName);
@@ -144,8 +186,9 @@ export const requestPasswordReset = async (email) => {
     } catch (emailError) {
         console.error('Error al enviar email de reset:', emailError);
     }
+
     return { message: 'Se ha enviado un correo con instrucciones para restablecer tu contraseña' };
-}
+};
 
 export const resetPassword = async (token, newPassword) => {
     const user = await User.findOne({
@@ -161,7 +204,7 @@ export const resetPassword = async (token, newPassword) => {
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
-    
+
     await user.save();
     await sendPasswordChangedEmail(user.email, user.firstName);
     return { message: 'Contraseña restablecida exitosamente' };
@@ -169,10 +212,8 @@ export const resetPassword = async (token, newPassword) => {
 
 //Edición de perfil propio
 export const updateProfileRecord = async (userId, profileData) => {
-    //campos editables por el propio usuario
     const { firstName, surname, phone, email, username } = profileData;
 
-    //validar unicidad de email si se cambia
     if (email) {
         const existing = await User.findOne({ email, _id: { $ne: userId } });
         if (existing) {
@@ -182,7 +223,6 @@ export const updateProfileRecord = async (userId, profileData) => {
         }
     }
 
-    //validar unicidad de username si se cambia
     if (username) {
         const existing = await User.findOne({ username, _id: { $ne: userId } });
         if (existing) {
@@ -205,14 +245,14 @@ export const updateProfileRecord = async (userId, profileData) => {
     }
 
     return updated;
-};//updateProfileRecord
+};
 
-//Gestión completa de usuarios (ADMIN)
+//Gestión completa de usuarios
 export const getAllUsersRecord = async () => {
     return User.find()
         .select('-password -activationToken -resetPasswordToken -resetPasswordExpires')
         .sort({ createdAt: -1 });
-};//getAllUsersRecord
+};
 
 export const getUserByIdRecord = async (userId) => {
     const user = await User.findById(userId)
@@ -225,7 +265,7 @@ export const getUserByIdRecord = async (userId) => {
     }
 
     return user;
-};//getUserByIdRecord
+};
 
 export const toggleUserStatusRecord = async (userId) => {
     const user = await User.findById(userId);
@@ -246,7 +286,7 @@ export const toggleUserStatusRecord = async (userId) => {
     delete userObject.resetPasswordExpires;
 
     return userObject;
-};//toggleUserStatusRecord
+};
 
 export const deleteUserRecord = async (userId) => {
     const user = await User.findById(userId);
@@ -257,7 +297,19 @@ export const deleteUserRecord = async (userId) => {
         throw e;
     }
 
+    if (user.role === 'RES_ADMIN_ROLE') {
+        const restaurantUpdate = await mongoose.connection.collection('restaurants').updateOne(
+            { assignedAdmin: new mongoose.Types.ObjectId(userId) },
+            { $set: { assignedAdmin: null } }
+        );
+
+        if (restaurantUpdate.matchedCount === 0) {
+            const e = new Error('No se encontró el restaurante asignado al administrador');
+            e.statusCode = 404;
+            throw e;
+        }
+    }
+
     await User.deleteOne({ _id: userId });
     return { deleted: true, userId };
-};//deleteUserRecord
-//Unicidad = Que solo exista uno
+};

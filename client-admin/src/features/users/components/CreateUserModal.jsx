@@ -1,13 +1,17 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
+export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurants = [] }) => {
     const {
         register,
         handleSubmit,
         getValues,
+        watch,
         reset,
         formState: { errors },
     } = useForm();
+
+    const selectedRole = watch("role");
 
     if (!isOpen) return null;
 
@@ -20,6 +24,7 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
             password: values.password,
             role: values.role,
             phone: values.phone || undefined,
+            ...(values.role === 'RES_ADMIN_ROLE' && { restaurantId: values.restaurantId }),
         };
 
         const ok = await onCreate(payload);
@@ -28,15 +33,6 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
             onClose();
         }
     };
-
-    const inputClass = "w-full px-3 py-2 rounded-lg text-sm outline-none transition";
-    const inputStyle = {
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        color: '#fff',
-    };
-    const labelClass = "block text-xs font-semibold mb-1";
-    const labelStyle = { color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase' };
 
     return (
         <div
@@ -58,111 +54,133 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
                 <form onSubmit={handleSubmit(submit)} className="p-5 space-y-4 overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className={labelClass} style={labelStyle}>Nombre</label>
+                            <label className="dbe-label mb-1">Nombre</label>
                             <input
                                 type="text"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("firstName", { required: "El nombre es obligatorio" })}
                             />
-                            {errors.firstName && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.firstName.message}</p>}
+                            {errors.firstName && <p className="dbe-error">{errors.firstName.message}</p>}
                         </div>
                         <div>
-                            <label className={labelClass} style={labelStyle}>Apellido</label>
+                            <label className="dbe-label mb-1">Apellido</label>
                             <input
                                 type="text"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("surname", { required: "El apellido es obligatorio" })}
                             />
-                            {errors.surname && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.surname.message}</p>}
+                            {errors.surname && <p className="dbe-error">{errors.surname.message}</p>}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className={labelClass} style={labelStyle}>Nombre de usuario</label>
+                            <label className="dbe-label mb-1">Nombre de usuario</label>
                             <input
                                 type="text"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("username", {
                                     required: "El username es obligatorio",
                                     minLength: { value: 3, message: "Mínimo 3 caracteres" }
                                 })}
                             />
-                            {errors.username && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.username.message}</p>}
+                            {errors.username && <p className="dbe-error">{errors.username.message}</p>}
                         </div>
                         <div>
-                            <label className={labelClass} style={labelStyle}>Teléfono</label>
+                            <label className="dbe-label mb-1">Teléfono</label>
                             <input
                                 type="tel"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("phone")}
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className={labelClass} style={labelStyle}>Correo electrónico</label>
+                        <label className="dbe-label mb-1">Correo electrónico</label>
                         <input
                             type="email"
-                            className={inputClass}
-                            style={inputStyle}
+                            className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                             {...register("email", {
                                 required: "El correo es obligatorio",
                                 pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Formato inválido" }
                             })}
                         />
-                        {errors.email && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.email.message}</p>}
+                        {errors.email && <p className="dbe-error">{errors.email.message}</p>}
                     </div>
 
                     <div>
-                        <label className={labelClass} style={labelStyle}>Rol</label>
+                        <label className="dbe-label mb-1">Rol</label>
                         <select
-                            className={inputClass}
-                            style={{ ...inputStyle, cursor: 'pointer' }}
+                            className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition cursor-pointer"
                             {...register("role", { required: "El rol es obligatorio" })}
                         >
-                            <option value="">Seleccione un rol</option>
-                            <option value="ADMIN_ROLE" style={{ background: '#1a1a2e' }}>ADMIN_ROLE</option>
+                            <option value="ALL" style={{ background: '#1a1a2e' }}>Seleccione un rol</option>
                             <option value="RES_ADMIN_ROLE" style={{ background: '#1a1a2e' }}>RES_ADMIN_ROLE</option>
                             <option value="USER_ROLE" style={{ background: '#1a1a2e' }}>USER_ROLE</option>
                         </select>
-                        {errors.role && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.role.message}</p>}
+                        {errors.role && <p className="dbe-error">{errors.role.message}</p>}
                     </div>
+
+                    {selectedRole === 'RES_ADMIN_ROLE' && (
+                        <div
+                            className="rounded-xl p-4 space-y-1"
+                            style={{ background: 'rgba(147,98,217,0.08)', border: '1px solid rgba(147,98,217,0.25)' }}
+                        >
+                            <label className="dbe-label mb-1" style={{ color: '#a78bfa' }}>
+                                Restaurante asignado
+                            </label>
+                            <select
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
+                                {...register("restaurantId", {
+                                    required: "Debes asignar un restaurante al RES_ADMIN_ROLE"
+                                })}
+                            >
+                                <option value="ALL" style={{ background: '#1a1a2e' }}>Seleccione un restaurante</option>
+                                {restaurants.map((r) => (
+                                    <option
+                                        key={r._id}
+                                        value={r._id}
+                                        style={{ background: '#1a1a2e' }}
+                                        disabled={!!r.assignedAdmin}
+                                    >
+                                        {r.name} {r.assignedAdmin ? '(ya tiene admin)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.restaurantId && <p className="dbe-error">{errors.restaurantId.message}</p>}
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className={labelClass} style={labelStyle}>Contraseña</label>
+                            <label className="dbe-label mb-1">Contraseña</label>
                             <input
                                 type="password"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("password", {
                                     required: "La contraseña es obligatoria",
                                     minLength: { value: 8, message: "Mínimo 8 caracteres" }
                                 })}
                             />
-                            {errors.password && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.password.message}</p>}
+                            {errors.password && <p className="dbe-error">{errors.password.message}</p>}
                         </div>
                         <div>
-                            <label className={labelClass} style={labelStyle}>Confirmar contraseña</label>
+                            <label className="dbe-label mb-1">Confirmar contraseña</label>
                             <input
                                 type="password"
-                                className={inputClass}
-                                style={inputStyle}
+                                className="dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition"
                                 {...register("confirmPassword", {
                                     required: "Confirma la contraseña",
                                     validate: (v) => v === getValues("password") || "Las contraseñas no coinciden"
                                 })}
                             />
-                            {errors.confirmPassword && <p className="text-xs mt-0.5" style={{ color: '#F2509C' }}>{errors.confirmPassword.message}</p>}
+                            {errors.confirmPassword && <p className="dbe-error">{errors.confirmPassword.message}</p>}
                         </div>
                     </div>
 
-                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4"
+                        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                         <button
                             type="button"
                             onClick={() => { reset(); onClose(); }}
@@ -174,8 +192,7 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full sm:w-auto px-5 py-2 rounded-lg text-sm font-semibold text-white transition"
-                            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)', opacity: loading ? 0.6 : 1 }}
+                            className="dbe-btn-primary w-full sm:w-auto px-5 py-2"
                         >
                             {loading ? 'Creando...' : 'Crear usuario'}
                         </button>
