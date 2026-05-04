@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useTableStore } from '../store/tableStore.js';
-import { useRestaurantStore } from '../../restaurants/store/restaurantStore.js';
 import { useAuthStore } from '../../auth/store/authStore.js';
 import { useUIStore } from '../../auth/store/uiStore.js';
 import { Spinner } from '../../auth/components/Spinner.jsx';
@@ -10,33 +9,22 @@ import { showError, showSuccess } from '../../../shared/utils/toast.js';
 
 export const Tables = () => {
     const { tables, loading, fetchTables, addTable, editTable, toggleStatus, removeTable, clearTables } = useTableStore();
-    const { restaurants, getRestaurants } = useRestaurantStore();
     const user = useAuthStore((s) => s.user);
     const { openConfirm } = useUIStore();
 
-    const [selectedRestaurantId, setSelectedRestaurantId] = useState('');
+    // El restaurantId viene directo del usuario autenticado
+    const restaurantId = user?.restaurantId;
+
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [modal, setModal] = useState(false);
     const [selected, setSelected] = useState(null);
     const [saving, setSaving] = useState(false);
 
-    console.log('restaurants:', restaurants);
-    console.log('selectedRestaurantId:', selectedRestaurantId);
-    console.log('user:', user);
-
-    useEffect(() => { getRestaurants(); }, []);
-
     useEffect(() => {
-        if (selectedRestaurantId) fetchTables(selectedRestaurantId);
+        if (restaurantId) fetchTables(restaurantId);
         else clearTables();
-    }, [selectedRestaurantId]);
-
-    useEffect(() => {
-    if (restaurants.length === 1 && !selectedRestaurantId) {
-        setSelectedRestaurantId(restaurants[0]._id);
-    }
-}, [restaurants]);
+    }, [restaurantId]);
 
     const filtered = tables.filter((t) => {
         const matchStatus =
@@ -95,167 +83,124 @@ export const Tables = () => {
                         Gestiona las mesas disponibles para reservaciones
                     </p>
                 </div>
-                {selectedRestaurantId && (
-                    <button
-                        onClick={() => { setSelected(null); setModal(true); }}
-                        style={{
-                            background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                            color: '#fff', border: 'none', borderRadius: 10,
-                            padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                        }}
-                    >
-                        + Nueva mesa
-                    </button>
-                )}
-            </div>
-
-            {/* Selector de restaurante */}
-            <div style={{
-                background: '#111118', border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 12, padding: '16px 20px', marginBottom: 24,
-            }}>
-                <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
-                    Restaurante
-                </label>
-                <select
-                    value={selectedRestaurantId}
-                    onChange={(e) => setSelectedRestaurantId(e.target.value)}
+                <button
+                    onClick={() => { setSelected(null); setModal(true); }}
                     style={{
-                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13,
-                        outline: 'none', cursor: 'pointer', width: '100%', maxWidth: 360,
+                        background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
+                        color: '#fff', border: 'none', borderRadius: 10,
+                        padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     }}
                 >
-                    <option value="">— Seleccionar restaurante —</option>
-                    {restaurants.map((r) => (
-                        <option key={r._id} value={r._id}>{r.name}</option>
-                    ))}
-                </select>
+                    + Nueva mesa
+                </button>
             </div>
 
-            {selectedRestaurantId && (
-                <>
-                    {/* Stats */}
-                    <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                        {[
-                            { label: 'Total',     value: tables.length,  color: '#9362D9', bg: 'rgba(147,98,217,0.1)',  border: 'rgba(147,98,217,0.2)' },
-                            { label: 'Activas',   value: totalActive,    color: '#4ade80', bg: 'rgba(74,222,128,0.07)', border: 'rgba(74,222,128,0.2)'  },
-                            { label: 'Inactivas', value: totalInactive,  color: '#f87171', bg: 'rgba(248,113,113,0.07)',border: 'rgba(248,113,113,0.2)' },
-                        ].map((s) => (
-                            <div key={s.label} style={{
-                                background: s.bg, border: `1px solid ${s.border}`,
-                                borderRadius: 10, padding: '10px 18px',
-                                display: 'flex', alignItems: 'center', gap: 10,
+            {/* Stats */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                {[
+                    { label: 'Total', value: tables.length, color: '#9362D9', bg: 'rgba(147,98,217,0.1)', border: 'rgba(147,98,217,0.2)' },
+                    { label: 'Activas', value: totalActive, color: '#4ade80', bg: 'rgba(74,222,128,0.07)', border: 'rgba(74,222,128,0.2)' },
+                    { label: 'Inactivas', value: totalInactive, color: '#f87171', bg: 'rgba(248,113,113,0.07)', border: 'rgba(248,113,113,0.2)' },
+                ].map((s) => (
+                    <div key={s.label} style={{
+                        background: s.bg, border: `1px solid ${s.border}`,
+                        borderRadius: 10, padding: '10px 18px',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                        <span style={{ color: s.color, fontWeight: 700, fontSize: 20 }}>{s.value}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{s.label}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Búsqueda + filtro */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+                <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por número o ubicación..."
+                    style={{
+                        flex: 1, minWidth: 200,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, outline: 'none',
+                    }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                    {[
+                        { value: 'ALL', label: 'Todas' },
+                        { value: 'ACTIVE', label: 'Activas' },
+                        { value: 'INACTIVE', label: 'Inactivas' },
+                    ].map((f) => {
+                        const active = statusFilter === f.value;
+                        return (
+                            <button key={f.value} onClick={() => setStatusFilter(f.value)} style={{
+                                padding: '7px 16px', borderRadius: 8,
+                                border: active ? '1px solid #9362D9' : '1px solid rgba(255,255,255,0.1)',
+                                background: active ? 'rgba(147,98,217,0.15)' : 'rgba(255,255,255,0.04)',
+                                color: active ? '#9362D9' : 'rgba(255,255,255,0.5)',
+                                fontSize: 12, fontWeight: active ? 700 : 400, cursor: 'pointer',
                             }}>
-                                <span style={{ color: s.color, fontWeight: 700, fontSize: 20 }}>{s.value}</span>
-                                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{s.label}</span>
-                            </div>
-                        ))}
-                    </div>
+                                {f.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
 
-                    {/* Búsqueda + filtro */}
-                    <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-                        <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Buscar por número o ubicación..."
-                            style={{
-                                flex: 1, minWidth: 200,
-                                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, outline: 'none',
-                            }}
-                        />
-                        <div style={{ display: 'flex', gap: 6 }}>
-                            {[
-                                { value: 'ALL',      label: 'Todas'    },
-                                { value: 'ACTIVE',   label: 'Activas'  },
-                                { value: 'INACTIVE', label: 'Inactivas'},
-                            ].map((f) => {
-                                const active = statusFilter === f.value;
-                                return (
-                                    <button key={f.value} onClick={() => setStatusFilter(f.value)} style={{
-                                        padding: '7px 16px', borderRadius: 8,
-                                        border: active ? '1px solid #9362D9' : '1px solid rgba(255,255,255,0.1)',
-                                        background: active ? 'rgba(147,98,217,0.15)' : 'rgba(255,255,255,0.04)',
-                                        color: active ? '#9362D9' : 'rgba(255,255,255,0.5)',
-                                        fontSize: 12, fontWeight: active ? 700 : 400, cursor: 'pointer',
-                                    }}>
-                                        {f.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Grid */}
-                    {loading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-                            <Spinner />
-                        </div>
-                    ) : filtered.length === 0 ? (
-                        <div style={{
-                            textAlign: 'center', padding: '60px 20px',
-                            background: 'rgba(255,255,255,0.02)',
-                            border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 14,
-                        }}>
-                            <p style={{ fontSize: 32, margin: '0 0 12px' }}></p>
-                            <p style={{ color: '#fff', fontWeight: 600, fontSize: 16, margin: '0 0 6px' }}>
-                                {tables.length === 0 ? 'No hay mesas registradas' : 'No se encontraron mesas'}
-                            </p>
-                            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, margin: 0 }}>
-                                {tables.length === 0 ? 'Crea la primera mesa para habilitar las reservaciones' : 'Intenta con otros filtros'}
-                            </p>
-                            {tables.length === 0 && (
-                                <button
-                                    onClick={() => { setSelected(null); setModal(true); }}
-                                    style={{
-                                        marginTop: 20,
-                                        background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                                        color: '#fff', border: 'none', borderRadius: 10,
-                                        padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                                    }}
-                                >
-                                    + Crear primera mesa
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                            gap: 16,
-                        }}>
-                            {filtered.map((table) => (
-                                <TableCard
-                                    key={table._id}
-                                    table={table}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                    onToggle={handleToggle}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </>
-            )}
-
-            {!selectedRestaurantId && restaurants.length > 0 && (
+            {/* Grid */}
+            {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                    <Spinner />
+                </div>
+            ) : filtered.length === 0 ? (
                 <div style={{
-                    textAlign: 'center', padding: '80px 20px',
+                    textAlign: 'center', padding: '60px 20px',
                     background: 'rgba(255,255,255,0.02)',
-                    border: '1px dashed rgba(255,255,255,0.06)', borderRadius: 14,
+                    border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 14,
                 }}>
-                    <p style={{ fontSize: 36, margin: '0 0 14px' }}></p>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, margin: 0 }}>
-                        Selecciona un restaurante para ver y gestionar sus mesas
+                    <p style={{ fontSize: 32, margin: '0 0 12px' }}>🪑</p>
+                    <p style={{ color: '#fff', fontWeight: 600, fontSize: 16, margin: '0 0 6px' }}>
+                        {tables.length === 0 ? 'No hay mesas registradas' : 'No se encontraron mesas'}
                     </p>
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, margin: 0 }}>
+                        {tables.length === 0 ? 'Crea la primera mesa para habilitar las reservaciones' : 'Intenta con otros filtros'}
+                    </p>
+                    {tables.length === 0 && (
+                        <button
+                            onClick={() => { setSelected(null); setModal(true); }}
+                            style={{
+                                marginTop: 20,
+                                background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
+                                color: '#fff', border: 'none', borderRadius: 10,
+                                padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                            }}
+                        >
+                            + Crear primera mesa
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: 16,
+                }}>
+                    {filtered.map((table) => (
+                        <TableCard
+                            key={table._id}
+                            table={table}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onToggle={handleToggle}
+                        />
+                    ))}
                 </div>
             )}
 
             {modal && (
                 <TableModal
                     table={selected}
-                    restaurantId={selectedRestaurantId}
+                    restaurantId={restaurantId}
                     onSave={handleSave}
                     onClose={handleClose}
                     saving={saving}
