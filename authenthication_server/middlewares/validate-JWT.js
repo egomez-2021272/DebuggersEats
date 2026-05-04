@@ -8,7 +8,6 @@ export const validateJWT = (req, res, next) => {
   };
 
   if (!jwtConfig.secret) {
-    console.error('Error de validación JWT: JWT_SECRET no está definido');
     return res.status(500).json({
       success: false,
       message: 'Configuración del servidor inválida: falta JWT_SECRET',
@@ -34,26 +33,14 @@ export const validateJWT = (req, res, next) => {
 
     const decoded = jwt.verify(token, jwtConfig.secret, verifyOptions);
 
-    // Log para debug - remover en producción
-    if (!decoded.role) {
-      console.warn(
-        `Token sin campo 'role' para usuario ${decoded.sub}. Payload:`,
-        JSON.stringify(decoded, null, 2)
-      );
-    }
-
     req.user = {
-      id: decoded.id || decoded.sub, 
+      id: decoded.id || decoded.sub,
       username: decoded.username,
-      jti: decoded.jti, // ID único del token
-      iat: decoded.iat, // Emitido en
-      role: decoded.role || 'USER_ROLE', // Rol del usuario (default: USER_ROLE)
+      role: decoded.role || 'USER_ROLE',
     };
 
     next();
   } catch (error) {
-    console.error('Error de validación JWT:', error.message);
-
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
