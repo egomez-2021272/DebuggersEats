@@ -1,9 +1,9 @@
 const CATEGORY_LABELS = {
-    DESAYUNO:'Desayuno',
-    ALMUERZO:'Almuerzo',
-    CENA:'Cena',
-    BEBIDA:'Bebida',
-    POSTRE:'Postre',
+    DESAYUNO: 'Desayuno',
+    ALMUERZO: 'Almuerzo',
+    CENA: 'Cena',
+    BEBIDA: 'Bebida',
+    POSTRE: 'Postre',
 };
 
 const INPUT = 'w-full px-3 py-2 rounded-lg outline-none text-sm text-white bg-white/[0.06] border border-white/10';
