@@ -1,20 +1,20 @@
-// src/features/events/components/UserEventsSection.jsx
 import { useEffect, useState } from 'react';
 import { useUserEventStore } from '../store/userEventStore.js';
 import { useAuthStore } from '../../auth/store/authStore.js';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
+import { useOutletContext } from "react-router-dom";
 
 const TYPE_CONFIG = {
-    event:     { label: 'Evento',      emoji: '🎉', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.25)' },
-    promotion: { label: 'Promoción',   emoji: '🏷️', color: '#34d399', bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.25)'  },
-    coupon:    { label: 'Cupón',       emoji: '🎟️', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.25)'  },
+    event: { label: 'Evento', emoji: '🎉', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.25)' },
+    promotion: { label: 'Promoción', emoji: '🏷️', color: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.25)' },
+    coupon: { label: 'Cupón', emoji: '🎟️', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)' },
 };
 
 const TYPE_FILTERS = [
-    { value: 'ALL',       label: 'Todos' },
-    { value: 'event',     label: '🎉 Eventos' },
+    { value: 'ALL', label: 'Todos' },
+    { value: 'event', label: '🎉 Eventos' },
     { value: 'promotion', label: '🏷️ Promociones' },
-    { value: 'coupon',    label: '🎟️ Cupones' },
+    { value: 'coupon', label: '🎟️ Cupones' },
 ];
 
 const formatDate = (d) => {
@@ -32,7 +32,6 @@ const cuposLabel = (ev) => {
 const EventCard = ({ event, userId, restaurants, onAction }) => {
     const cfg = TYPE_CONFIG[event.type] || TYPE_CONFIG.event;
     const [loading, setLoading] = useState(false);
-    const [done, setDone] = useState(false); // aplicó promoción/cupón
 
     const restaurantName = (() => {
         if (event.restaurant_id?.name) return event.restaurant_id.name;
@@ -41,6 +40,13 @@ const EventCard = ({ event, userId, restaurants, onAction }) => {
     })();
 
     const isInscrito = event.inscripciones?.some((i) => (i.userId?._id || i.userId)?.toString() === userId);
+    const yaUso = event.usos?.some((u) => (u.userId?._id || u.userId)?.toString() === userId);
+    const [done, setDone] = useState(yaUso);
+
+    useEffect(() => {
+        setDone(yaUso);
+    }, [yaUso]);
+
     const isFull = event.max_capacity && (event.current_capacity || 0) >= event.max_capacity && !isInscrito;
     const cupos = cuposLabel(event);
 
@@ -119,8 +125,10 @@ const EventCard = ({ event, userId, restaurants, onAction }) => {
 
             {/* Descripción */}
             {event.description && (
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: 0, lineHeight: 1.5,
-                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <p style={{
+                    color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: 0, lineHeight: 1.5,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                }}>
                     {event.description}
                 </p>
             )}
@@ -162,7 +170,8 @@ const MetaPill = ({ icon, text, color }) => (
 );
 
 // ── UserEventsSection ───────────────────────────────────────────────────────
-export const UserEventsSection = ({ restaurants }) => {
+export const UserEventsSection = () => {
+    const { restaurants } = useOutletContext();
     const { events, loading, fetchPublicEvents, join, leave, apply } = useUserEventStore();
     const userId = useAuthStore((s) => s.user?._id || s.user?.id);
 
@@ -172,7 +181,6 @@ export const UserEventsSection = ({ restaurants }) => {
 
     useEffect(() => {
         if (restaurants?.length) fetchPublicEvents(restaurants);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [restaurants?.length]);
 
     const handleAction = async (eventId, type, isInscrito) => {
@@ -274,7 +282,7 @@ export const UserEventsSection = ({ restaurants }) => {
             ) : (
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 400px))',
                     gap: 16,
                 }}>
                     {filtered.map((ev) => (

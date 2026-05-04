@@ -1,17 +1,17 @@
 
 
 const TYPE_META = {
-    event:     { label: 'Evento',     bg: 'rgba(147,98,217,0.2)',  color: '#9362D9',  border: 'rgba(147,98,217,0.4)' },
-    promotion: { label: 'Promoción',  bg: 'rgba(195,91,185,0.2)', color: '#C35BB9',  border: 'rgba(195,91,185,0.4)' },
-    coupon:    { label: 'Cupón',      bg: 'rgba(242,80,156,0.2)', color: '#F2509C',  border: 'rgba(242,80,156,0.4)' },
+    event: { label: 'Evento', bg: 'rgba(147,98,217,0.2)', color: '#9362D9', border: 'rgba(147,98,217,0.4)' },
+    promotion: { label: 'Promoción', bg: 'rgba(195,91,185,0.2)', color: '#C35BB9', border: 'rgba(195,91,185,0.4)' },
+    coupon: { label: 'Cupón', bg: 'rgba(242,80,156,0.2)', color: '#F2509C', border: 'rgba(242,80,156,0.4)' },
 };
 
 const STATUS_META = {
-    active:    { label: 'Activo',     color: '#4ade80', dot: true },
-    draft:     { label: 'Borrador',   color: '#fbbf24', dot: false },
-    paused:    { label: 'Pausado',    color: '#fb923c', dot: false },
-    expired:   { label: 'Expirado',   color: '#f87171', dot: false },
-    cancelled: { label: 'Cancelado',  color: '#f87171', dot: false },
+    active: { label: 'Activo', color: '#4ade80', dot: true },
+    draft: { label: 'Borrador', color: '#fbbf24', dot: false },
+    paused: { label: 'Pausado', color: '#fb923c', dot: false },
+    expired: { label: 'Expirado', color: '#f87171', dot: false },
+    cancelled: { label: 'Cancelado', color: '#f87171', dot: false },
 };
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -36,17 +36,17 @@ const RECURRENCE_LABEL = {
 };
 
 export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
-    const type  = TYPE_META[event.type]   || TYPE_META.event;
+    const type = TYPE_META[event.type] || TYPE_META.event;
     const status = STATUS_META[event.status] || STATUS_META.draft;
 
     const schedule = event.schedule || {};
     const recLabel = RECURRENCE_LABEL[schedule.recurrence];
-    const dLabel   = daysLabel(schedule.days_of_week);
+    const dLabel = daysLabel(schedule.days_of_week);
     const timeSlot = schedule.time_slots?.[0];
 
     // Progreso de capacidad
-    const hasCap  = event.max_capacity > 0;
-    const capPct  = hasCap ? Math.min(100, Math.round((event.current_capacity / event.max_capacity) * 100)) : null;
+    const hasCap = event.max_capacity > 0;
+    const capPct = hasCap ? Math.min(100, Math.round((event.current_capacity / event.max_capacity) * 100)) : null;
 
     // Progreso de usos
     const hasUsos = event.max_usos > 0;
@@ -138,9 +138,9 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
                         borderRadius: 20,
                         border: '1px solid rgba(255,255,255,0.08)',
                     }}>
-                        {event.visibility === 'public'       ? 'Público'
-                         : event.visibility === 'private'    ? 'Privado'
-                         : 'Solo socios'}
+                        {event.visibility === 'public' ? 'Público'
+                            : event.visibility === 'private' ? 'Privado'
+                                : 'Solo socios'}
                     </span>
                 )}
                 {event.tags?.slice(0, 3).map((tag) => (
@@ -171,8 +171,8 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
                             background: capPct >= 90
                                 ? '#f87171'
                                 : capPct >= 60
-                                ? '#C35BB9'
-                                : '#9362D9',
+                                    ? '#C35BB9'
+                                    : '#9362D9',
                             borderRadius: 4,
                             transition: 'width 0.4s ease',
                         }} />
