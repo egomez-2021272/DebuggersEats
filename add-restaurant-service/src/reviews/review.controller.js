@@ -1,4 +1,4 @@
-import { createReviewRecord, getReviewsByRestaurantRecord, updateReviewRecord, deleteReviewRecord, replyToReviewRecord } from './review.services.js';
+import { createReviewRecord, getReviewsByRestaurantRecord, getReviewsByUserRecord, updateReviewRecord, deleteReviewRecord, replyToReviewRecord } from './review.services.js';
 
 export const createReview = async (req, res) => {
     try {
@@ -29,7 +29,11 @@ export const createReview = async (req, res) => {
 
 export const getReviewsByRestaurant = async (req, res) => {
     try {
-        const reviews = await getReviewsByRestaurantRecord(req.params.restaurantId);
+        const reviews = await getReviewsByRestaurantRecord(
+            req.params.restaurantId,
+            req.user.id,
+            req.user.role
+        );
 
         res.status(200).json({
             success: true,
@@ -42,8 +46,18 @@ export const getReviewsByRestaurant = async (req, res) => {
             message: 'Error al obtener los comentarios',
             error: e.message
         });
-    }//try-catch
+    }
 };//getReviewsByRestaurant
+
+//Mis resenias
+export const getMyReviews = async (req, res) => {
+    try {
+        const reviews = await getReviewsByUserRecord(req.user.id);
+        res.status(200).json({ success: true, total: reviews.length, data: reviews });
+    } catch (e) {
+        res.status(e.statusCode || 500).json({ success: false, message: 'Error al obtener tus reseñas', error: e.message });
+    }
+};
 
 export const updateReview = async (req, res) => {
     try {
