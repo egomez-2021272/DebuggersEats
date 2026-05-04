@@ -1,6 +1,6 @@
-import { Navigate } from "react-router-dom";
-import { useAuthStore } from "../../features/auth/store/authStore";
-import { Spinner } from '../../features/auth/components/Spinner.jsx'; 
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../../features/auth/store/authStore';
+import { Spinner } from '../../features/auth/components/Spinner.jsx';
 
 export const RoleGuard = ({ children, allowedRoles = [] }) => {
   const user = useAuthStore((state) => state.user);
@@ -11,7 +11,7 @@ export const RoleGuard = ({ children, allowedRoles = [] }) => {
 
   const hasAccess = isAuthenticated && allowedRoles.includes(user?.role);
 
-  if (!hasAccess) return <Navigate to="/unauthorized" replace />;
+  if (!hasAccess) return <Navigate to='/unauthorized' replace />;
 
   return children;
 };
