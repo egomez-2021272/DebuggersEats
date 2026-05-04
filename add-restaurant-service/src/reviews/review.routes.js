@@ -1,11 +1,46 @@
 import { Router } from 'express';
-import { createReview, getReviewsByRestaurant, updateReview, deleteReview, replyToReview } from './review.controller.js';
+import { createReview, getReviewsByRestaurant, updateReview, deleteReview, replyToReview, getMyReviews } from './review.controller.js';
 import { validateJWT } from '../../middlewares/validate-jwt.js';
 import { validateRole } from '../../middlewares/validate-role.js';
 
 const router = Router();
 
 router.use(validateJWT);
+
+/**
+ * @swagger
+ * /add-restaurant/v1/reviews/me:
+ *   get:
+ *     tags: [Reviews]
+ *     summary: Obtener mis reseñas
+ *     description: Devuelve todas las reseñas publicadas por el usuario autenticado. El userId se toma automáticamente del token JWT.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Reseñas obtenidas exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 total:
+ *                   type: integer
+ *                   example: 3
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Review'
+ *       401:
+ *         description: Token JWT inválido o no proporcionado
+ *       500:
+ *         description: Error al obtener las reseñas
+ */
+// ver mis propias reseñas — usuario autenticado
+router.get('/me', getMyReviews);
 
 /**
  * @swagger
@@ -47,11 +82,8 @@ router.use(validateJWT);
  *       500:
  *         description: Error al obtener los comentarios
  */
-//ver comentarios de un restaurante — cualquier usuario
-router.get(
-    '/restaurant/:restaurantId',
-    getReviewsByRestaurant
-);
+// ver comentarios de un restaurante — cualquier usuario
+router.get('/restaurant/:restaurantId', getReviewsByRestaurant);
 
 /**
  * @swagger
@@ -112,11 +144,8 @@ router.get(
  *       500:
  *         description: Error al publicar el comentario
  */
-//publicar comentario — cualquier usuario autenticado
-router.post(
-    '/restaurant/:restaurantId',
-    createReview
-);
+// publicar comentario — cualquier usuario autenticado
+router.post('/restaurant/:restaurantId', createReview);
 
 /**
  * @swagger
@@ -176,11 +205,8 @@ router.post(
  *       500:
  *         description: Error al actualizar el comentario
  */
-//editar propio comentario
-router.patch(
-    '/:id',
-    updateReview
-);
+// editar propio comentario
+router.patch('/:id', updateReview);
 
 /**
  * @swagger
@@ -222,11 +248,8 @@ router.patch(
  *       500:
  *         description: Error al eliminar el comentario
  */
-//eliminar: propio usuario o ADMIN
-router.delete(
-    '/:id',
-    deleteReview
-);
+// eliminar: propio usuario o ADMIN
+router.delete('/:id', deleteReview);
 
 /**
  * @swagger
@@ -282,11 +305,7 @@ router.delete(
  *       500:
  *         description: Error al publicar la respuesta
  */
-//Respuesta del RES_ADMIN a un comentario
-router.post(
-    '/:id/reply',
-    validateRole('RES_ADMIN_ROLE'),
-    replyToReview
-);
+// Respuesta del RES_ADMIN a un comentario
+router.post('/:id/reply', validateRole('RES_ADMIN_ROLE'), replyToReview);
 
 export default router;

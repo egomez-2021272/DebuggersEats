@@ -6,14 +6,14 @@ export const Sidebar = () => {
     const user = useAuthStore((state) => state.user);
 
     const allItems = [
-        { label: 'Restaurantes', to: "/dashboard/restaurants", roles: ['ADMIN_ROLE', 'RES_ADMIN_ROLE'] },
+        { label: 'Restaurantes', to: "/dashboard/restaurants", roles: ['ADMIN_ROLE'] },
         { label: 'Usuarios', to: "/dashboard/users", roles: ['ADMIN_ROLE'] },
         { label: 'Menú', to: "/dashboard/menu", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Eventos', to: "/dashboard/events", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Pedidos', to: "/dashboard/orders", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Reservaciones', to: "/dashboard/reservations", roles: ['RES_ADMIN_ROLE'] },
-        { label: 'Mesas', to: "/dashboard/tables", roles: ['RES_ADMIN_ROLE'] },
         { label: 'Reseñas', to: "/dashboard/reviews", roles: ['RES_ADMIN_ROLE'] },
+        { label: 'Mesas', to: "/dashboard/tables", roles: ['RES_ADMIN_ROLE'] },
     ];
 
     const items = allItems.filter((item) => item.roles.includes(user?.role));

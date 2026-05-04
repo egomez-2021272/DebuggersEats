@@ -14,11 +14,18 @@ export const createReviewRecord = async ({ restaurantId, userId, userName, ratin
     return review;
 };//createReviewRecord
 
-export const getReviewsByRestaurantRecord = async (restaurantId) => {
+export const getReviewsByRestaurantRecord = async (restaurantId, userId, userRole) => {
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) {
         const e = new Error('Restaurante no encontrado');
         e.statusCode = 404;
+        throw e;
+    }
+
+    //solo el res-admin arraigado a este restaurante ve las reseñas
+    if (userRole === 'RES_ADMIN_ROLE' && restaurant.assignedAdmin?.toString() !== userId) {
+        const e = new Error('No tienes permisos para ver las reseñas de este restaurante');
+        e.statusCode = 403;
         throw e;
     }
 
@@ -45,6 +52,11 @@ export const updateReviewRecord = async ({ reviewId, userId, rating, comment }) 
     return review;
 };//updateReviewRecord
 
+//Reviews de un usuario
+export const getReviewsByUserRecord = async (userId) => {
+    return Review.find({ userId }).sort({ createdAt: -1 });
+};
+
 export const deleteReviewRecord = async ({ reviewId, userId, userRole }) => {
     const review = await Review.findById(reviewId);
     if (!review) {
@@ -53,8 +65,8 @@ export const deleteReviewRecord = async ({ reviewId, userId, userRole }) => {
         throw e;
     }
 
-    //El propio usuario o un ADMIN puede eliminar el comentario
-    if (review.userId !== userId && userRole !== 'ADMIN_ROLE') {
+    //El propio usuario o un res-admin puede eliminar el comentario
+    if (review.userId !== userId && userRole !== 'RES_ADMIN_ROLE') {
         const e = new Error('No tienes permisos para eliminar este comentario');
         e.statusCode = 403;
         throw e;
@@ -72,9 +84,8 @@ export const replyToReviewRecord = async ({ reviewId, userId, replyText }) => {
         e.statusCode = 404;
         throw e;
     }
-
-    //Solo el RES_ADMIN del restaurante puede responder
-    if (review.restaurantId.createdBy.toString() !== userId) {
+    //Solo el res-admin asignado puede responder
+    if (review.restaurantId.assignedAdmin?.toString() !== userId) {
         const e = new Error('No tienes permisos para responder este comentario');
         e.statusCode = 403;
         throw e;
