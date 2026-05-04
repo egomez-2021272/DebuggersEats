@@ -32,6 +32,7 @@
     opacity: 0;
     transform: translateY(-6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -43,6 +44,7 @@
     opacity: 0;
     transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -104,7 +106,45 @@ input:-webkit-autofill:focus {
   caret-color: #fff;
 }
 
-/*Poner las listas con fondo oscuro */
+.dbe-input {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 8px;
+}
+
+.dbe-input:focus {
+  border-color: #F2509C;
+  outline: none;
+}
+
+.dbe-label {
+  color: rgba(255, 255, 255, 0.6);
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dbe-input-dark {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #fff;
+  border-radius: 8px;
+}
+
+.dbe-input-dark:focus {
+  border-color: #F2509C;
+  outline: none;
+}
+
+.dbe-error {
+  color: #F2509C;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
 select {
   color-scheme: dark;
 }
