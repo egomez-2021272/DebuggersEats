@@ -24,11 +24,9 @@ const CATEGORY_COLORS = {
     CAFETERIA: { bg: 'rgba(147,98,217,0.15)', color: '#a78bfa' },
 };
 
-const dim = { color: 'rgba(255,255,255,0.5)' };
-const dimmer = { color: 'rgba(255,255,255,0.3)' };
 const pill = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' };
 
-export const Restaurants = () => {
+export const Restaurants = ({ onSelectRestaurant }) => {
     const navigate = useNavigate();
     const { restaurants, loading, error, getRestaurants, deleteRestaurant } = useRestaurantStore();
     const { saveRestaurant } = useSaveRestaurant();
@@ -63,12 +61,24 @@ export const Restaurants = () => {
     const handleEdit = (restaurant) => { setSelectedRestaurant(restaurant); setOpenModal(true); };
     const handleClose = () => { setOpenModal(false); setSelectedRestaurant(null); };
 
+    const handleVerMenu = (e, restaurantId) => {
+        e.stopPropagation();
+        if (onSelectRestaurant) {
+            onSelectRestaurant(restaurantId);
+        } else {
+            navigate(role === 'USER_ROLE'
+                ? `/home/restaurantes/${restaurantId}/menu`
+                : `/dashboard/restaurantes/${restaurantId}/menu`
+            );
+        }
+    };
+
     return (
         <div className="p-4">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-white">Restaurantes</h1>
-                    <p className="text-sm" style={dim}>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {restaurants.length} restaurante{restaurants.length !== 1 ? 's' : ''} registrado{restaurants.length !== 1 ? 's' : ''}
                     </p>
                 </div>
@@ -107,7 +117,8 @@ export const Restaurants = () => {
             </div>
 
             {filtered.length === 0 ? (
-                <div className="rounded-xl p-6 text-center text-sm" style={{ background: '#16161f', border: '1px solid rgba(255,255,255,0.06)', ...dimmer }}>
+                <div className="rounded-xl p-6 text-center text-sm"
+                    style={{ background: '#16161f', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)' }}>
                     No hay restaurantes para mostrar.
                 </div>
             ) : (
@@ -119,10 +130,15 @@ export const Restaurants = () => {
                             <div
                                 key={restaurant._id}
                                 className="rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
-                                style={{ background: '#16161f', border: `1px solid ${isExpanded ? 'rgba(242,80,156,0.3)' : 'rgba(255,255,255,0.07)'}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                                style={{
+                                    background: '#16161f',
+                                    border: `1px solid ${isExpanded ? 'rgba(242,80,156,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                                }}
                                 onClick={() => setExpandedId(isExpanded ? null : restaurant._id)}
                             >
-                                <div className="w-full h-44 flex items-center justify-center overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                                <div className="w-full h-44 flex items-center justify-center overflow-hidden"
+                                    style={{ background: 'rgba(255,255,255,0.04)' }}>
                                     {restaurant.photo
                                         ? <img src={restaurant.photo} alt={restaurant.name} className="w-full h-full object-cover" />
                                         : <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>Sin imagen</span>
@@ -132,7 +148,8 @@ export const Restaurants = () => {
                                 <div className="p-4 flex flex-col flex-1 gap-2">
                                     <div className="flex items-start justify-between gap-2">
                                         <h2 className="text-base font-bold text-white leading-tight">{restaurant.name}</h2>
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold shrink-0" style={{ background: catStyle.bg, color: catStyle.color }}>
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
+                                            style={{ background: catStyle.bg, color: catStyle.color }}>
                                             {CATEGORY_LABELS[restaurant.category] || restaurant.category}
                                         </span>
                                     </div>
@@ -140,7 +157,9 @@ export const Restaurants = () => {
                                     <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{restaurant.address}</p>
 
                                     <div className="flex gap-2 flex-wrap mt-1">
-                                        <span className="px-2 py-0.5 rounded-full text-xs" style={pill}>{restaurant.capacity} personas</span>
+                                        <span className="px-2 py-0.5 rounded-full text-xs" style={pill}>
+                                            {restaurant.capacity} personas
+                                        </span>
                                         {restaurant.businessHours?.open && (
                                             <span className="px-2 py-0.5 rounded-full text-xs" style={pill}>
                                                 {restaurant.businessHours.open} - {restaurant.businessHours.close}
@@ -149,29 +168,29 @@ export const Restaurants = () => {
                                     </div>
 
                                     {restaurant.contactInfo?.managerName && (
-                                        <p className="text-xs" style={dimmer}>Encargado: {restaurant.contactInfo.managerName}</p>
+                                        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                                            Encargado: {restaurant.contactInfo.managerName}
+                                        </p>
                                     )}
 
                                     {isExpanded && (
                                         <div className="mt-2 space-y-1.5 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                                            {restaurant.phone && <p className="text-xs" style={dim}>Número Telefónico: {restaurant.phone}</p>}
-                                            {restaurant.contactInfo?.email && <p className="text-xs" style={dim}>Correo: {restaurant.contactInfo.email}</p>}
+                                            {restaurant.phone && (
+                                                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{restaurant.phone}</p>
+                                            )}
+                                            {restaurant.contactInfo?.email && (
+                                                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{restaurant.contactInfo.email}</p>
+                                            )}
                                         </div>
                                     )}
 
                                     <button
-                                        className="flex-1 py-1.5 rounded-lg text-sm font-medium transition bg-white/[0.06] hover:bg-white/10 text-white/70"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); if (role === "USER_ROLE") {
-                                                navigate(`/home/restaurantes/${restaurant._id}/menu`);
-                                            } else {
-                                                navigate(`/dashboard/restaurantes/${restaurant._id}/menu`);
-                                            }
-                                        }}
+                                        className="flex-1 py-1.5 rounded-lg text-sm font-medium transition bg-white/[0.06] hover:bg-white/10 text-white/70 mt-2"
+                                        onClick={(e) => handleVerMenu(e, restaurant._id)}
                                     >
                                         Ver menú
                                     </button>
-                                    
+
                                     {isAdmin && (
                                         <div className="flex gap-2 mt-auto pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                                             <button

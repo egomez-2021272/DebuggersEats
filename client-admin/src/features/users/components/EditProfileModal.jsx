@@ -1,15 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-const inputCls = "w-full px-3.5 py-2.5 rounded-lg text-[13px] outline-none transition";
-const inputSt = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8 };
-const labelCls = "block text-[0.68rem] font-bold uppercase tracking-[0.08em] mb-1.5";
-const labelSt = { color: 'rgba(255,255,255,0.5)' };
-const errorSt = { color: 'var(--dbe-pink)', fontSize: 11, marginTop: 4 };
-
-const onFocus = (e) => { e.target.style.borderColor = 'var(--dbe-pink)'; };
-const onBlur = (e) => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; };
-
 export const EditProfileModal = ({ isOpen, onClose, onSave, user, loading }) => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
@@ -36,12 +27,16 @@ export const EditProfileModal = ({ isOpen, onClose, onSave, user, loading }) => 
     const initials = `${user?.firstName?.[0] ?? ''}${user?.surname?.[0] ?? ''}`.toUpperCase() || 'U';
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(11,11,13,0.85)', backdropFilter: 'blur(6px)' }}>
-            <div className="w-full max-w-[480px] rounded-[20px] overflow-hidden animate-fadeInScale" style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#13131c', boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,80,156,0.08)' }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(11,11,13,0.85)', backdropFilter: 'blur(6px)' }}>
+            <div className="w-full max-w-[480px] rounded-[20px] overflow-hidden animate-fadeInScale"
+                style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#13131c', boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,80,156,0.08)' }}>
 
-                <div className="flex items-center justify-between px-6 py-5" style={{ background: 'linear-gradient(135deg, rgba(242,80,156,0.15) 0%, rgba(147,98,217,0.1) 100%)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center justify-between px-6 py-5"
+                    style={{ background: 'linear-gradient(135deg, rgba(242,80,156,0.15) 0%, rgba(147,98,217,0.1) 100%)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                     <div className="flex items-center gap-3">
-                        <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white shrink-0" style={{ background: 'var(--dbe-gradient)' }}>
+                        <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white shrink-0"
+                            style={{ background: 'var(--dbe-gradient)' }}>
                             {initials}
                         </div>
                         <div>
@@ -64,34 +59,50 @@ export const EditProfileModal = ({ isOpen, onClose, onSave, user, loading }) => 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 p-6">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className={labelCls} style={labelSt}>Nombre</label>
-                            <input className={inputCls} style={inputSt} onFocus={onFocus} onBlur={onBlur} {...register('firstName', { required: 'Obligatorio' })} />
-                            {errors.firstName && <p style={errorSt}>{errors.firstName.message}</p>}
+                            <label className="dbe-label mb-1.5">Nombre</label>
+                            <input className="dbe-input w-full px-3.5 py-2.5 text-[13px] rounded-lg transition"
+                                {...register('firstName', { required: 'Obligatorio' })} />
+                            {errors.firstName && <p className="dbe-error">{errors.firstName.message}</p>}
                         </div>
                         <div>
-                            <label className={labelCls} style={labelSt}>Apellido</label>
-                            <input className={inputCls} style={inputSt} onFocus={onFocus} onBlur={onBlur} {...register('surname', { required: 'Obligatorio' })} />
-                            {errors.surname && <p style={errorSt}>{errors.surname.message}</p>}
+                            <label className="dbe-label mb-1.5">Apellido</label>
+                            <input className="dbe-input w-full px-3.5 py-2.5 text-[13px] rounded-lg transition"
+                                {...register('surname', { required: 'Obligatorio' })} />
+                            {errors.surname && <p className="dbe-error">{errors.surname.message}</p>}
                         </div>
                     </div>
 
                     <div>
-                        <label className={labelCls} style={labelSt}>Correo electronico</label>
-                        <input type="email" className={inputCls} style={inputSt} onFocus={onFocus} onBlur={onBlur} {...register('email', { required: 'El correo es obligatorio', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Correo inválido' } })} />
-                        {errors.email && <p style={errorSt}>{errors.email.message}</p>}
+                        <label className="dbe-label mb-1.5">Correo electrónico</label>
+                        <input type="email"
+                            className="dbe-input w-full px-3.5 py-2.5 text-[13px] rounded-lg transition"
+                            {...register('email', {
+                                required: 'El correo es obligatorio',
+                                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Correo inválido' }
+                            })} />
+                        {errors.email && <p className="dbe-error">{errors.email.message}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className={labelCls} style={labelSt}>Usuario</label>
-                            <input className={inputCls} style={inputSt} onFocus={onFocus} onBlur={onBlur} {...register('username', { required: 'Obligatorio', minLength: { value: 3, message: 'Min. 3 caracteres' } })} />
-                            {errors.username && <p style={errorSt}>{errors.username.message}</p>}
+                            <label className="dbe-label mb-1.5">Usuario</label>
+                            <input className="dbe-input w-full px-3.5 py-2.5 text-[13px] rounded-lg transition"
+                                {...register('username', {
+                                    required: 'Obligatorio',
+                                    minLength: { value: 3, message: 'Min. 3 caracteres' }
+                                })} />
+                            {errors.username && <p className="dbe-error">{errors.username.message}</p>}
                         </div>
                         <div>
-                            <label className={labelCls} style={labelSt}>
-                                Telefono <span className="normal-case font-normal tracking-normal" style={{ color: 'rgba(255,255,255,0.25)' }}>(opcional)</span>
+                            <label className="dbe-label mb-1.5">
+                                Teléfono{' '}
+                                <span className="normal-case font-normal tracking-normal" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                                    (opcional)
+                                </span>
                             </label>
-                            <input type="tel" className={inputCls} style={inputSt} onFocus={onFocus} onBlur={onBlur} {...register('phone')} />
+                            <input type="tel"
+                                className="dbe-input w-full px-3.5 py-2.5 text-[13px] rounded-lg transition"
+                                {...register('phone')} />
                         </div>
                     </div>
 

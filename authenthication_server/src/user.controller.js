@@ -179,7 +179,7 @@ export const updateProfile = async (req, res) => {
 };//updateProfile
 
 //Gestión completa de usuarios
-export const getUsers = async (req, res) => { //Obtener todos los usuarios - Opcional: Agregar estado de cuenta al listar
+export const getUsers = async (req, res) => {
     try {
         const users = await getAllUsersRecord();
 
@@ -232,10 +232,9 @@ export const toggleUserStatus = async (req, res) => {//Activar desactivar uusuar
     }//try-catch
 };//toggleUserStatus
 
-export const deleteUser = async (req, res) => {//Eliminar usuario
+export const deleteUser = async (req, res) => {
     try {
         const result = await deleteUserRecord(req.params.id);
-
         res.status(200).json({
             success: true,
             message: 'Usuario eliminado exitosamente',
@@ -247,5 +246,5 @@ export const deleteUser = async (req, res) => {//Eliminar usuario
             message: 'Error al eliminar el usuario',
             error: e.message
         });
-    }//try-catch
-};//deleteUser
+    }
+};

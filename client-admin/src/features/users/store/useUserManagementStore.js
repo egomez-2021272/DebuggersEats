@@ -15,9 +15,9 @@ export const useUserManagementStore = create((set, get) => ({
 
     setUser: (users) => set({ users }),
 
-    getAllUsers: async (apiFn = getAllUsersRequest, options = {}) => {
+    getAllUsers: async (options = {}) => {
+        const { force = false } = options;
         try {
-            const { force = false } = options;
             const state = get();
 
             if (state.loading) return;
@@ -25,8 +25,7 @@ export const useUserManagementStore = create((set, get) => ({
 
             set({ loading: true, error: null });
 
-            const fetcher = typeof apiFn === 'function' ? apiFn : getAllUsersRequest;
-            const response = await fetcher();
+            const response = await getAllUsersRequest();
 
             set({
                 users: response.data.data || [],
