@@ -1,11 +1,11 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --color-dbe-pink: #F2509C;
-  --color-dbe-purple-pink: #C35BB9;
-  --color-dbe-purple: #9362D9;
-  --color-dbe-black: #0B0B0D;
-  --color-dbe-light: #F2F2F2;
+  --color-dbe-pink: #f2509c;
+  --color-dbe-purple-pink: #c35bb9;
+  --color-dbe-purple: #9362d9;
+  --color-dbe-black: #0b0b0d;
+  --color-dbe-light: #f2f2f2;
 }
 
 :root {
@@ -13,13 +13,13 @@
   line-height: 1.5;
   font-weight: 400;
 
-  --dbe-pink: #F2509C;
-  --dbe-purple-pink: #C35BB9;
-  --dbe-purple: #9362D9;
-  --dbe-black: #0B0B0D;
-  --dbe-light: #F2F2F2;
-  --dbe-gradient: linear-gradient(135deg, #F2509C 0%, #C35BB9 50%, #9362D9 100%);
-  --dbe-gradient-h: linear-gradient(90deg, #F2509C 0%, #9362D9 100%);
+  --dbe-pink: #f2509c;
+  --dbe-purple-pink: #c35bb9;
+  --dbe-purple: #9362d9;
+  --dbe-black: #0b0b0d;
+  --dbe-light: #f2f2f2;
+  --dbe-gradient: linear-gradient(135deg, #f2509c 0%, #c35bb9 50%, #9362d9 100%);
+  --dbe-gradient-h: linear-gradient(90deg, #f2509c 0%, #9362d9 100%);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -70,7 +70,7 @@
 }
 
 .sidebar-item.active::after {
-  content: "";
+  content: '';
   position: absolute;
   right: 0;
   top: 50%;
@@ -114,7 +114,7 @@ input:-webkit-autofill:focus {
 }
 
 .dbe-input:focus {
-  border-color: #F2509C;
+  border-color: #f2509c;
   outline: none;
 }
 
@@ -129,18 +129,18 @@ input:-webkit-autofill:focus {
 
 .dbe-input-dark {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   border-radius: 8px;
 }
 
 .dbe-input-dark:focus {
-  border-color: #F2509C;
+  border-color: #f2509c;
   outline: none;
 }
 
 .dbe-error {
-  color: #F2509C;
+  color: #f2509c;
   font-size: 0.75rem;
   margin-top: 4px;
 }

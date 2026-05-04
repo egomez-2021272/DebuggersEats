@@ -8,7 +8,7 @@ export const getAllEvents = () => axiosRestaurant.get(BASE);
 
 /** Eventos activos de un restaurante (público) */
 export const getEventsByRestaurant = (restaurantId) =>
-    axiosRestaurant.get(`${BASE}/restaurant/${restaurantId}`);
+  axiosRestaurant.get(`${BASE}/restaurant/${restaurantId}`);
 
 /** Detalle de un evento */
 export const getEventById = (id) => axiosRestaurant.get(`${BASE}/${id}`);
