@@ -7,6 +7,8 @@ import { EditProfileModal } from '../components/EditProfileModal.jsx';
 import { ReviewModal } from '../../review/components/ReviewModal.jsx';
 import { updateProfile } from '../../../shared/apis/auth.js';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
+import { CartDrawer } from '../../orders/components/CartDrawer.jsx';
+import { useCart } from '../../orders/hooks/useCart.js';
 
 const NAV_ITEMS = [
   { label: 'Inicio', path: '/home' },
@@ -25,6 +27,7 @@ export const UserPage = () => {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const { toggleCart, itemCount } = useCart();
 
   useEffect(() => {
     getRestaurants();
@@ -103,16 +106,7 @@ export const UserPage = () => {
         </div>
 
         <div className='flex items-center gap-2.5'>
-          <div
-            className='px-3.5 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer'
-            style={{
-              border: '1px solid rgba(242,80,156,0.3)',
-              background: 'rgba(242,80,156,0.08)',
-              color: 'var(--dbe-pink)',
-            }}
-          >
-            Carrito
-          </div>
+          <CartButton itemCount={itemCount} onClick={toggleCart} />
           <AvatarMenu
             initials={initials}
             user={user}
@@ -135,7 +129,34 @@ export const UserPage = () => {
       />
 
       <ReviewModal isOpen={reviewModalOpen} onClose={() => setReviewModalOpen(false)} />
+      <CartDrawer />
     </div>
+  );
+};
+
+const CartButton = ({ itemCount, onClick }) => {
+  const hasItems = itemCount > 0;
+  return (
+    <button
+      onClick={onClick}
+      aria-label={`Carrito, ${itemCount} platillo${itemCount !== 1 ? 's' : ''}`}
+      className='relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-all'
+      style={{
+        border: '1px solid rgba(242,80,156,0.3)',
+        background: hasItems ? 'rgba(242,80,156,0.12)' : 'rgba(242,80,156,0.08)',
+        color: 'var(--dbe-pink)',
+      }}
+    >
+      Carrito
+      {hasItems && (
+        <span
+          className='flex items-center justify-center rounded-full text-[10px] font-bold text-white min-w-[18px] h-[18px] px-1'
+          style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+        >
+          {itemCount > 99 ? '99+' : itemCount}
+        </span>
+      )}
+    </button>
   );
 };
 

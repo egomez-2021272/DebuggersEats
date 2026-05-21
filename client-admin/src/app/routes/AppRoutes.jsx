@@ -18,6 +18,7 @@ import { Reservations } from '../../features/reservations/components/Reservation
 import { Tables } from '../../features/tables/components/Tables.jsx';
 import { MyReviews } from '../../features/users/pages/MyReviews.jsx';
 import { UserEventsSection } from '../../features/events/components/UserEventsSection.jsx';
+import {MyOrdersPage} from '../../features/orders/pages/MyOrdersPage.jsx'
 
 export const AppRoutes = () => {
   return (
@@ -48,13 +49,11 @@ export const AppRoutes = () => {
         <Route path='reservaciones' element={<Reservations />} />
         <Route path='resenas' element={<MyReviews />} />
         <Route
-          path='ordenes'
-          element={<div style={{ color: '#fff', padding: 24 }}>Mis Órdenes</div>}
+          path='ordenes' element={<MyOrdersPage />}
         />
-      </Route>
+</Route>
 
       <Route path='restaurantes/:restaurantId/menu' element={<RestaurantMenus />} />
-
       {/* Vista para ADMIN_ROLE y RES_ADMIN_ROLE */}
       <Route
         path='/dashboard/*'
