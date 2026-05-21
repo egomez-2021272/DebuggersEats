@@ -24,7 +24,7 @@ const DAY_SHORT = {
   DOMINGO: 'Dom',
 };
 
-export const MenuCard = ({ menu, isAdmin, onEdit, onDelete }) => (
+export const MenuCard = ({ menu, isAdmin, onEdit, onDelete, onAddToCart }) => (
   <article
     className='rounded-2xl overflow-hidden flex flex-col bg-[#16161f] border border-white/[0.07] hover:-translate-y-0.5 transition-all duration-300'
     style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3' }}
@@ -87,6 +87,17 @@ export const MenuCard = ({ menu, isAdmin, onEdit, onDelete }) => (
       {menu.restaurantId?.name && (
         <p className='text-xs text-white/30'>Restaurante: {menu.restaurantId.name}</p>
       )}
+
+      {onAddToCart && (
+        <button
+          onClick={() => onAddToCart(menu)}
+          className='w-full mt-1 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 active:scale-[0.98] transition-all'
+          style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+        >
+          + Agregar al carrito
+        </button>
+      )}
+      
       {isAdmin && (
         <footer className='flex gap-2 mt-2 pt-3 border-t border-white/[0.05]'>
           <button

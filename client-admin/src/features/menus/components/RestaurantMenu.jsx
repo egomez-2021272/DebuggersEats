@@ -5,6 +5,7 @@ import { useAuthStore } from '../../auth/store/authStore.js';
 import { useUIStore } from '../../auth/store/uiStore.js';
 import { useSaveMenu } from '../hooks/useSaveMenu.js';
 import { useCategoryFilter } from '../hooks/useCategoryFilter.js';
+import { useCart } from '../../orders/hooks/useCart.js';
 import { Spinner } from '../../auth/components/Spinner.jsx';
 import { MenuCard } from './MenuCard.jsx';
 import { MenuFilters } from './MenuFilters.jsx';
@@ -19,6 +20,8 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
   const { saveMenu } = useSaveMenu();
   const { openConfirm } = useUIStore();
   const isAdmin = useAuthStore((s) => s.user?.role === 'RES_ADMIN_ROLE');
+  const isUser = useAuthStore((s) => s.user?.role === 'USER_ROLE');
+  const { cart, addToCart } = useCart();
   const [openModal, setOpenModal] = useState(false);
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -57,6 +60,22 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
       navigate(-1);
     }
   };
+
+  const handleAddToCart = (menu) => {
+    const cartHasItemsFromOtherRestaurant =
+      cart?.restaurantId && cart.restaurantId !== restaurantId;
+
+    if (cartHasItemsFromOtherRestaurant) {
+      openConfirm({
+        title: 'Cambiar restaurante',
+        message:
+          'Tu carrito tiene platillos de otro restaurante. Si continúas, se vaciará automáticamente. ¿Deseas continuar?',
+        onConfirm: () => addToCart(menu._id, 1),
+      });
+    } else {
+      addToCart(menu._id, 1);
+    }
+  };//advertir al usuario que si cambia de restaurante se borra el carrito
 
   if (loading && menus.length === 0) return <Spinner />;
 
@@ -116,6 +135,7 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
                   setOpenModal(true);
                 }}
                 onDelete={handleDelete}
+                onAddToCart={isUser ? handleAddToCart : undefined}
               />
             </li>
           ))}
