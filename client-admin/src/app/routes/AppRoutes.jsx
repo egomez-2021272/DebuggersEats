@@ -18,7 +18,8 @@ import { Reservations } from '../../features/reservations/components/Reservation
 import { Tables } from '../../features/tables/components/Tables.jsx';
 import { MyReviews } from '../../features/users/pages/MyReviews.jsx';
 import { UserEventsSection } from '../../features/events/components/UserEventsSection.jsx';
-import {MyOrdersPage} from '../../features/orders/pages/MyOrdersPage.jsx'
+import { MyOrdersPage } from '../../features/orders/pages/MyOrdersPage.jsx'
+import { RestaurantOrdersPage } from '../../features/orders/pages/RestaurantOrdersPage.jsx';
 
 export const AppRoutes = () => {
   return (
@@ -51,9 +52,8 @@ export const AppRoutes = () => {
         <Route
           path='ordenes' element={<MyOrdersPage />}
         />
-</Route>
+      </Route>
 
-      <Route path='restaurantes/:restaurantId/menu' element={<RestaurantMenus />} />
       {/* Vista para ADMIN_ROLE y RES_ADMIN_ROLE */}
       <Route
         path='/dashboard/*'
@@ -105,6 +105,15 @@ export const AppRoutes = () => {
           element={
             <RoleGuard allowedRoles={['RES_ADMIN_ROLE']}>
               <Reservations />
+            </RoleGuard>
+          }
+        />
+
+        <Route
+          path='orders'
+          element={
+            <RoleGuard allowedRoles={['RES_ADMIN_ROLE']}>
+              <RestaurantOrdersPage />
             </RoleGuard>
           }
         />

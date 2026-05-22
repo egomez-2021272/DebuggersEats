@@ -6,6 +6,13 @@ import * as CartService from '../orders/cart.service.js'
 //ventana de cancelación del cliente
 const CANCEL_WINDOW_MS = 5 * 60 * 1000; //5 minutos en milisegundos
 
+//El administrador puede operar si el creo el rest o fue asignado como admin
+const isResAdminAuthorized = (restaurant, userId) => {
+    const createdBy = restaurant.createdBy?.toString();
+    const assignedAdmin = restaurant.assignedAdmin?.toString();
+    return createdBy === userId || assignedAdmin === userId;
+};
+
 //devuelve el menu del restaurante
 export const getMenu = async (req, res) => {
     const { restaurantId } = req.params;
@@ -265,7 +272,7 @@ export const getPedidosByRestaurant = async (req, res) => {
             return res.status(404).json({ message: 'Restaurante no encontrado' });
         }
 
-        if (restaurant.createdBy.toString() !== req.user.id) {
+        if (!isResAdminAuthorized(restaurant, req.user.id)) {
             return res.status(403).json({ message: 'No tienes permisos para ver los pedidos de este restaurante' });
         }
 
@@ -305,11 +312,10 @@ export const getPedidoById = async (req, res) => {
         //si es RES_ADMIN verificar que el pedido pertenece a su restaurante
         if (esResAdmin && !esCliente) {
             const restaurant = await Restaurant.findById(order.restaurantId);
-            if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+            if (!restaurant || !isResAdminAuthorized(restaurant, req.user.id)) {
                 return res.status(403).json({ message: 'Este pedido no pertenece a tu restaurante' });
             }
         }
-
         res.json({ data: order });
     } catch (err) {
         res.status(500).json({ message: 'Error al obtener el pedido', err: err.message });
@@ -339,7 +345,7 @@ export const actualizarStatus = async (req, res) => {
 
         //Seguridad — RES_ADMIN solo actualiza pedidos de su restaurante
         const restaurant = await Restaurant.findById(order.restaurantId);
-        if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+        if (!restaurant || !isResAdminAuthorized(restaurant, req.user.id)) {
             return res.status(403).json({ message: 'No tienes permisos para actualizar este pedido' });
         }
 
@@ -379,7 +385,7 @@ export const editarPedidoPorRestaurante = async (req, res) => {
         }
 
         const restaurant = await Restaurant.findById(order.restaurantId);
-        if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+        if (!restaurant || !isResAdminAuthorized(restaurant, req.user.id)) {
             return res.status(403).json({ message: 'No tienes permisos para editar este pedido' });
         }
 
@@ -444,7 +450,7 @@ export const cancelarPedido = async (req, res) => {
         if (esResAdmin) {
             //RES_ADMIN verifica que el pedido pertenece a su restaurante
             const restaurant = await Restaurant.findById(order.restaurantId);
-            if (!restaurant || restaurant.createdBy.toString() !== req.user.id) {
+            if (!restaurant || !isResAdminAuthorized(restaurant, req.user.id)) {
                 return res.status(403).json({ message: 'Este pedido no pertenece a tu restaurante' });
             }
             //RES_ADMIN puede cancelar si está Pendiente o Aceptado
