@@ -20,6 +20,8 @@ import { MyReviews } from '../../features/users/pages/MyReviews.jsx';
 import { UserEventsSection } from '../../features/events/components/UserEventsSection.jsx';
 import { MyOrdersPage } from '../../features/orders/pages/MyOrdersPage.jsx'
 import { RestaurantOrdersPage } from '../../features/orders/pages/RestaurantOrdersPage.jsx';
+import { ReporteRestaurantePage } from '../../features/reports/pages/ReporteRestaurantePage.jsx';
+import { ReportePlataformaPage } from '../../features/reports/pages/ReportePlataformaPage.jsx';
 
 export const AppRoutes = () => {
   return (
@@ -95,6 +97,22 @@ export const AppRoutes = () => {
           element={
             <RoleGuard allowedRoles={['RES_ADMIN_ROLE']}>
               <Events />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path='reportes'
+          element={
+            <RoleGuard allowedRoles={['RES_ADMIN_ROLE']}>
+              <ReporteRestaurantePage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path='reportes-plataforma'
+          element={
+            <RoleGuard allowedRoles={['ADMIN_ROLE']}>
+              <ReportePlataformaPage />
             </RoleGuard>
           }
         />
