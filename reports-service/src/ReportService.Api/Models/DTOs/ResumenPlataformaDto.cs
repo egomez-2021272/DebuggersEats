@@ -9,4 +9,5 @@ public class ResumenPlataformaDto
     public int TotalRestaurantes { get; set; }
     public List<PlatoMasVendidoDto> PlatosMasVendidosGlobal { get; set; } = new();
     public DateTime FechaCalculo { get; set; }
+    public string Fuente { get; set; } = string.Empty;
 }

@@ -18,6 +18,14 @@ const axiosRestaurant = axios.create({
   },
 });
 
+const axiosReports = axios.create({
+  baseURL: import.meta.env.VITE_REPORTS_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 //INTERCEPTORES DE TOKENS
 axiosAuth.interceptors.request.use((config) => {
   config._axiosClient = 'auth';
@@ -30,6 +38,15 @@ axiosAuth.interceptors.request.use((config) => {
 
 axiosRestaurant.interceptors.request.use((config) => {
   config._axiosClient = 'restaurant';
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+axiosReports.interceptors.request.use((config) => {
+  config._axiosClient = 'reports';
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -106,6 +123,7 @@ const handleRefreshToken = async function (_error) {
 
 axiosAuth.interceptors.response.use((res) => res, handleRefreshToken);
 axiosRestaurant.interceptors.response.use((res) => res, handleRefreshToken);
+axiosReports.interceptors.response.use((res) => res, handleRefreshToken);
 
-export { axiosAuth, axiosRestaurant };
+export { axiosAuth, axiosRestaurant, axiosReports };
 export { handleRefreshToken }; //ojala funcione o lloro
