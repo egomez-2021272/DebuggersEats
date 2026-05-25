@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { ReviewModal } from '../../review/components/ReviewModal.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../auth/store/authStore.js';
 import { useRestaurantStore } from '../../restaurants/store/restaurantStore.js';
@@ -28,14 +27,12 @@ export const UserPage = () => {
   const { restaurants, getRestaurants } = useRestaurantStore();
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [search, setSearch] = useState('');
-  const [reviewOpen, setReviewOpen] = useState(false);
-
 
   const QUICK_ACCESS = [
     { title: 'Nueva Reservación', sub: 'Reserva tu mesa ahora', onClick: () => navigate('/home/reservaciones') },
     { title: 'Ordenar al Instante', sub: 'Ver menús disponibles', onClick: () => navigate('/home/restaurantes') },
     { title: 'Eventos Gastronómicos', sub: 'Noches especiales', onClick: () => navigate('/home/eventos') },
-    { title: 'Dejar Comentario', sub: 'Califica tu experiencia', onClick: () => setReviewOpen(true) },
+    { title: 'Dejar Comentario', sub: 'Califica tu experiencia', onClick: () => navigate('/home/resenas') },
   ];
 
   const filtered = restaurants.filter((r) => {
@@ -50,10 +47,6 @@ export const UserPage = () => {
 
   return (
     <>
-      <ReviewModal
-        isOpen={reviewOpen}
-        onClose={() => setReviewOpen(false)}
-      />
       <p className='text-[13px] mb-1.5' style={{ color: 'rgba(255,255,255,0.45)' }}>
         Hola, {user?.firstName} {user?.surname}
       </p>
@@ -93,7 +86,7 @@ export const UserPage = () => {
       <p className='text-[12px] font-bold uppercase tracking-[0.07em] mb-3' style={{ color: 'rgba(255,255,255,0.5)' }}>
         Acceso rapido
       </p>
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-8'>
+      <div className='grid grid-cols-4 gap-2.5 mb-8'>
         {QUICK_ACCESS.map(({ title, sub, onClick }) => (
           <HoverCard key={title} onClick={onClick}>
             <div className='text-[13px] font-semibold mb-0.5'>{title}</div>
