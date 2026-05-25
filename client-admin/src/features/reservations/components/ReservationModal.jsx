@@ -1,34 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useReservationStore } from '../store/reservationStore.js';
 
-const inputSx = {
-  width: '100%',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 8,
-  padding: '8px 12px',
-  color: '#fff',
-  fontSize: 13,
-  outline: 'none',
-  boxSizing: 'border-box',
-  colorScheme: 'dark',
-};
-
-const Lbl = ({ text, req }) => (
-  <label
-    style={{
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.5)',
-      fontWeight: 600,
-      letterSpacing: '0.04em',
-      display: 'block',
-      marginBottom: 4,
-    }}
-  >
-    {text} {req && <span style={{ color: '#F2509C' }}>*</span>}
-  </label>
-);
-
 const Section = ({ title, children }) => (
   <div style={{ marginBottom: 22 }}>
     <p
@@ -131,7 +103,7 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
     if (!form.tableId) {
       if (tables.length === 0 && form.restaurantId)
         return setError(
-          'Este restaurante no tiene mesas registradas. Crea mesas primero desde el panel de Mesas.'
+          'Este restaurante no tiene mesas registradas.'
         );
       return setError('Selecciona una mesa.');
     }
@@ -216,29 +188,34 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         <Section title='Titular'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div style={{ gridColumn: '1/-1' }}>
-              <Lbl text='Nombre del titular' req />
+              <label className='dbe-label mb-1'>
+                Nombre del titular <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+              </label>
               <input
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
                 value={form.peopleName}
                 onChange={(e) => setF('peopleName', e.target.value)}
                 placeholder='Ej. Juan Pérez'
               />
             </div>
             <div>
-              <Lbl text='Número de personas' req />
+              <label className='dbe-label mb-1'>
+                Número de personas <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+              </label>
               <input
                 type='number'
                 min='1'
                 max='20'
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
+                style={{ colorScheme: 'dark' }}
                 value={form.peopleNumber}
                 onChange={(e) => setF('peopleNumber', e.target.value)}
               />
             </div>
             <div>
-              <Lbl text='Observaciones' />
+              <label className='dbe-label mb-1'>Observaciones</label>
               <input
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
                 value={form.observation}
                 onChange={(e) => setF('observation', e.target.value)}
                 placeholder='Ej. Mesa cerca de la ventana'
@@ -248,9 +225,12 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         </Section>
 
         <Section title='Restaurante'>
-          <Lbl text='Restaurante' req />
+          <label className='dbe-label mb-1'>
+            Restaurante <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+          </label>
           <select
-            style={{ ...inputSx, cursor: 'pointer' }}
+            className='dbe-input w-full px-3 py-2 text-sm'
+            style={{ colorScheme: 'dark', cursor: 'pointer' }}
             value={form.restaurantId}
             onChange={(e) => handleRestaurantChange(e.target.value)}
           >
@@ -266,10 +246,13 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         <Section title='Fecha y hora'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <Lbl text='Fecha' req />
+              <label className='dbe-label mb-1'>
+                Fecha <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+              </label>
               <input
                 type='date'
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
+                style={{ colorScheme: 'dark' }}
                 value={form.reservationDate}
                 onChange={(e) => {
                   setF('reservationDate', e.target.value);
@@ -278,10 +261,13 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
               />
             </div>
             <div>
-              <Lbl text='Hora' req />
+              <label className='dbe-label mb-1'>
+                Hora <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+              </label>
               <input
                 type='time'
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
+                style={{ colorScheme: 'dark' }}
                 value={form.reservationHour}
                 onChange={(e) => {
                   setF('reservationHour', e.target.value);
@@ -347,10 +333,10 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
         </Section>
 
         <Section title='Mesa'>
-          <Lbl
-            text={dispInfo ? 'Mesas disponibles para ese horario' : 'Mesas del restaurante'}
-            req
-          />
+          <label className='dbe-label mb-1'>
+            {dispInfo ? 'Mesas disponibles para ese horario' : 'Mesas del restaurante'}{' '}
+            <span style={{ color: 'var(--dbe-pink)' }}>*</span>
+          </label>
           {loadingTables ? (
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Cargando mesas...</p>
           ) : mesasToShow.length === 0 ? (
@@ -368,7 +354,7 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
                   : dispInfo
                     ? 'No hay mesas disponibles para ese horario. Intenta con otra fecha u hora.'
                     : tables.length === 0
-                      ? 'Este restaurante no tiene mesas registradas. Debes crear mesas desde el panel de Mesas antes de hacer una reservación.'
+                      ? 'Este restaurante no tiene mesas registradas.'
                       : 'No hay mesas disponibles. Verifica disponibilidad con otra fecha u hora.'}
               </p>
             </div>
@@ -418,14 +404,14 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
 
         {error && (
           <p
+            className='dbe-error'
             style={{
-              color: '#f87171',
-              fontSize: 13,
               background: 'rgba(248,113,113,0.08)',
               border: '1px solid rgba(248,113,113,0.2)',
               borderRadius: 8,
               padding: '8px 12px',
               margin: '0 0 16px',
+              fontSize: 13,
             }}
           >
             {error}
@@ -451,20 +437,8 @@ export const ReservationModal = ({ reservation, restaurants, onSave, onClose, sa
           <button
             onClick={handleSubmit}
             disabled={saving}
-            style={{
-              padding: '9px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: saving
-                ? 'rgba(255,255,255,0.1)'
-                : 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-            }}
+            className='dbe-btn-primary'
+            style={{ padding: '9px 24px', borderRadius: 8, fontSize: 13, opacity: saving ? 0.7 : 1 }}
           >
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear reservación'}
           </button>
