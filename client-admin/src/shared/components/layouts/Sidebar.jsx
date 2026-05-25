@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../features/auth/store/authStore.js';
 
-export const Sidebar = () => {
+export const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
   const allItems = [
+    { label: 'Resumen', to: '/dashboard/resumen', roles: ['RES_ADMIN_ROLE'] },
     { label: 'Restaurantes', to: '/dashboard/restaurants', roles: ['ADMIN_ROLE'] },
     { label: 'Usuarios', to: '/dashboard/users', roles: ['ADMIN_ROLE'] },
     { label: 'Reportes plataforma', to: '/dashboard/reportes-plataforma', roles: ['ADMIN_ROLE'] },
@@ -22,12 +23,26 @@ export const Sidebar = () => {
 
   return (
     <aside
-      className='w-56 min-h-[calc(100vh-3.5rem)] flex flex-col p-3'
+      className={`
+        fixed top-14 left-0 z-40 h-[calc(100vh-3.5rem)] w-56 flex flex-col p-3
+        transition-transform duration-300
+        lg:static lg:translate-x-0 lg:h-auto lg:min-h-[calc(100vh-3.5rem)]
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}
       style={{
         background: '#111118',
         borderRight: '1px solid rgba(255,255,255,0.05)',
       }}
     >
+      {/* Botón cerrar en móvil */}
+      <button
+        onClick={onClose}
+        className='lg:hidden self-end mb-2 p-1.5 rounded-lg text-xs'
+        style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+      >
+        ✕ Cerrar
+      </button>
+
       <ul className='space-y-1 mt-2'>
         {items.map((item) => {
           const active = location.pathname.startsWith(item.to);
@@ -35,6 +50,7 @@ export const Sidebar = () => {
             <li key={item.to}>
               <Link
                 to={item.to}
+                onClick={onClose}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition sidebar-item${active ? ' active' : ''}`}
                 style={active ? {} : { color: 'rgba(255,255,255,0.5)' }}
                 onMouseEnter={(e) => {
