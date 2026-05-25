@@ -77,13 +77,24 @@ export const Users = () => {
   };
 
   const handleDelete = (user) => {
+    const assignedRestaurant = restaurants.find(
+      (r) => r.assignedAdmin === user._id || r.assignedAdmin?._id === user._id
+    );
+    const hasRestaurant = user.role === 'RES_ADMIN_ROLE' && assignedRestaurant;
+
     openConfirm({
       title: 'Eliminar usuario',
-      message: `¿Eliminar a "${user.username}" permanentemente?`,
+      message: hasRestaurant
+        ? `"${user.username}" administra "${assignedRestaurant.name}". Al eliminarlo, ese restaurante quedará sin administrador. ¿Deseas continuar?`
+        : `¿Eliminar a "${user.username}" permanentemente? Esta acción no se puede deshacer.`,
       onConfirm: async () => {
         const res = await deleteUser(user._id);
-        if (res.success) showSuccess('Usuario eliminado correctamente');
-        else showError('Error al eliminar el usuario');
+        if (res.success) {
+          showSuccess('Usuario eliminado correctamente');
+          if (hasRestaurant) getRestaurants();
+        } else {
+          showError('Error al eliminar el usuario');
+        }
       },
     });
   };
@@ -111,8 +122,7 @@ export const Users = () => {
           </p>
         </div>
         <button
-          className='px-4 py-2 rounded-lg text-sm font-semibold text-white transition'
-          style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+          className='dbe-btn-primary px-4 py-2 rounded-lg text-sm font-semibold'
           onClick={() => setOpenCreateModal(true)}
         >
           + Nuevo usuario
@@ -294,15 +304,15 @@ export const Users = () => {
                             style={
                               u.isActive
                                 ? {
-                                    background: 'rgba(234,179,8,0.1)',
-                                    color: '#fbbf24',
-                                    border: '1px solid rgba(234,179,8,0.2)',
-                                  }
+                                  background: 'rgba(234,179,8,0.1)',
+                                  color: '#fbbf24',
+                                  border: '1px solid rgba(234,179,8,0.2)',
+                                }
                                 : {
-                                    background: 'rgba(34,197,94,0.1)',
-                                    color: '#4ade80',
-                                    border: '1px solid rgba(34,197,94,0.2)',
-                                  }
+                                  background: 'rgba(34,197,94,0.1)',
+                                  color: '#4ade80',
+                                  border: '1px solid rgba(34,197,94,0.2)',
+                                }
                             }
                           >
                             {u.isActive ? 'Desactivar' : 'Activar'}
