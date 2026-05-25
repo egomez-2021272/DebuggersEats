@@ -16,7 +16,6 @@ export const Menus = () => {
   const { openConfirm } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'RES_ADMIN_ROLE';
-
   const restaurantId = user?.restaurantId;
 
   const [openModal, setOpenModal] = useState(false);
@@ -67,8 +66,7 @@ export const Menus = () => {
         </hgroup>
         {isAdmin && (
           <button
-            className='px-4 py-2 rounded-lg text-sm font-semibold text-white transition'
-            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+            className='dbe-btn-primary px-4 py-2 rounded-lg text-sm font-semibold'
             onClick={() => {
               setSelected(null);
               setOpenModal(true);

@@ -11,6 +11,7 @@ import { MenuCard } from './MenuCard.jsx';
 import { MenuFilters } from './MenuFilters.jsx';
 import { MenuModal } from './MenuModal.jsx';
 import { showError } from '../../../shared/utils/toast.js';
+import { PublicReviewList } from '../../review/components/PublicReviewList.jsx';
 
 export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
   const { restaurantId: paramId } = useParams();
@@ -75,7 +76,7 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
     } else {
       addToCart(menu._id, 1);
     }
-  };//advertir al usuario que si cambia de restaurante se borra el carrito
+  };
 
   if (loading && menus.length === 0) return <Spinner />;
 
@@ -100,8 +101,7 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
         </hgroup>
         {isAdmin && (
           <button
-            className='px-4 py-2 rounded-lg text-sm font-semibold text-white transition'
-            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+            className='dbe-btn-primary px-4 py-2 rounded-lg text-sm font-semibold'
             onClick={() => {
               setSelected(null);
               setOpenModal(true);
@@ -141,6 +141,8 @@ export const RestaurantMenus = ({ restaurantId: propId, onBack }) => {
           ))}
         </ul>
       )}
+
+      <PublicReviewList restaurantId={restaurantId} />
 
       <MenuModal
         isOpen={openModal}
