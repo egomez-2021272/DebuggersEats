@@ -20,7 +20,7 @@ export const LoginForm = ({ onForgot, onRegister }) => {
       if (res.role === 'USER_ROLE') {
         navigate('/home');
       } else if (res.role === 'RES_ADMIN_ROLE') {
-        navigate('/dashboard/menu');
+        navigate('/dashboard/resumen');
       } else {
         navigate('/dashboard/restaurants');
       }
