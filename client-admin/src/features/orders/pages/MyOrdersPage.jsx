@@ -69,7 +69,7 @@ export const MyOrdersPage = () => {
                             }`}
                         style={
                             statusFilter === value
-                                ? { background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }
+                                ? { background: 'var(--dbe-gradient-h)' }
                                 : {}
                         }
                     >

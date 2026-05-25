@@ -15,12 +15,12 @@ const actionStyle = (status) => {
     if (status === ORDER_STATUS.CANCELADO) {
         return 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20';
     }
-    return 'text-white hover:opacity-90';
-};//Cambia el color el boton depende del estado
+    return 'dbe-btn-primary';
+}; //Cambia el color el boton depende del estado
 
 const actionInlineStyle = (status) => {
     if (status === ORDER_STATUS.CANCELADO) return {};
-    return { background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' };
+    return {};
 };
 
 export const OrderDetailAdminModal = ({
@@ -35,7 +35,10 @@ export const OrderDetailAdminModal = ({
     return (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-3 sm:px-4'>
             <div className='w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl overflow-hidden bg-[#111118] border border-white/10 shadow-2xl'>
-                <div className='px-5 py-4 bg-gradient-to-r from-pink-500 to-purple-500 shrink-0 flex items-start justify-between'>
+                <div
+                    className='px-5 py-4 shrink-0 flex items-start justify-between'
+                    style={{ background: 'var(--dbe-gradient)' }}
+                >
                     <div>
                         <h2 className='text-lg font-bold text-white'>Detalle del pedido</h2>
                         <p className='text-xs text-white/80 font-mono'>
@@ -153,8 +156,7 @@ export const OrderDetailAdminModal = ({
                                         key={status}
                                         onClick={() => onUpdateStatus(order._id, order.status, status)}
                                         disabled={loadingAction}
-                                        className={`w-full py-2.5 rounded-lg text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50
-                                                    ${actionStyle(status)}`}
+                                        className={`w-full py-2.5 rounded-lg text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 ${actionStyle(status)}`}
                                         style={actionInlineStyle(status)}
                                     >
                                         {loadingAction

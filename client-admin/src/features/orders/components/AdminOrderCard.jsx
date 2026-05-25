@@ -67,8 +67,7 @@ export const AdminOrderCard = ({
                         <button
                             onClick={() => onAdvanceStatus(order)}
                             disabled={loadingAction}
-                            className='w-full py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 cursor-pointer active:scale-[0.98] transition disabled:opacity-50'
-                            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+                            className='dbe-btn-primary w-full py-2 rounded-lg text-sm font-semibold active:scale-[0.98]'
                         >
                             {nextLabel}
                         </button>

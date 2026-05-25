@@ -33,8 +33,9 @@ export const RestaurantOrdersPage = () => {
         setSelectedOrder,
     } = useAdminOrders();
 
-    const [activeFilter, setActiveFilter] = useState(0);  // índice de STATUS_FILTERS
+    const [activeFilter, setActiveFilter] = useState(0);
     const [modalOpen, setModalOpen] = useState(false);
+
     useEffect(() => {
         const params = STATUS_FILTERS[activeFilter].params;
         fetchOrders(params);
@@ -55,7 +56,7 @@ export const RestaurantOrdersPage = () => {
             message: `¿Cambiar el pedido #${order._id.slice(-6).toUpperCase()} a "${next}"?`,
             onConfirm: () => updateOrderStatus(order._id, order.status, next),
         });
-    };//Actualizar el estado
+    }; //Actualizar el estado
 
     const handleCancel = (order) => {
         openConfirm({
@@ -84,9 +85,8 @@ export const RestaurantOrdersPage = () => {
         }
         const result = await updateOrderStatus(orderId, currentStatus, newStatus);
         if (result.ok) setModalOpen(false);
-    };//Cambiar el estado desde la tarjeta
+    }; //Cambiar el estado desde la tarjeta
 
-    // Contar pedidos pendientes para el badge del header
     const pendingCount = orders.filter((o) => o.status === ORDER_STATUS.PENDIENTE).length;
 
     return (
@@ -96,8 +96,10 @@ export const RestaurantOrdersPage = () => {
                     <div className='flex items-center gap-2'>
                         <h1 className='text-3xl font-bold text-white'>Pedidos</h1>
                         {pendingCount > 0 && (
-                            <span className='px-2 py-0.5 rounded-full text-xs font-bold text-white animate-pulse'
-                                style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}>
+                            <span
+                                className='px-2 py-0.5 rounded-full text-xs font-bold text-white animate-pulse'
+                                style={{ background: 'var(--dbe-gradient-h)' }}
+                            >
                                 {pendingCount} nuevo{pendingCount !== 1 ? 's' : ''}
                             </span>
                         )}
@@ -110,8 +112,7 @@ export const RestaurantOrdersPage = () => {
                 <button
                     onClick={() => fetchOrders(STATUS_FILTERS[activeFilter].params)}
                     disabled={loading}
-                    className='px-4 py-2 rounded-lg text-sm font-semibold text-white/60 bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer
-                    transition disabled:opacity-50 self-start md:self-auto'
+                    className='px-4 py-2 rounded-lg text-sm font-semibold text-white/60 bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition disabled:opacity-50 self-start md:self-auto'
                 >
                     {loading ? '...' : '↻ Actualizar'}
                 </button>
@@ -129,7 +130,7 @@ export const RestaurantOrdersPage = () => {
                             }`}
                         style={
                             activeFilter === idx
-                                ? { background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }
+                                ? { background: 'var(--dbe-gradient-h)' }
                                 : {}
                         }
                     >
