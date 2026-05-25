@@ -43,11 +43,8 @@ export const createUserRecord = async ({ userData }) => {
         );
     }
 
-    try {
-        await sendActivationEmail(user.email, activationToken, user.firstName);
-    } catch (emailError) {
-        console.error('Error al enviar email de activación:', emailError);
-    }
+    sendActivationEmail(user.email, activationToken, user.firstName)
+        .catch(err => console.error('Error al enviar email de activación:', err));
 
     const userObject = user.toObject();
     delete userObject.password;
@@ -68,11 +65,8 @@ export const registerUserRecord = async ({ userData }) => {
     });
     await user.save();
 
-    try {
-        await sendActivationEmail(user.email, activationToken, user.firstName);
-    } catch (emailError) {
-        console.error('Error al enviar email de activación:', emailError);
-    }
+    sendActivationEmail(user.email, activationToken, user.firstName)
+        .catch(err => console.error('Error al enviar email de activación:', err));
 
     const userObject = user.toObject();
     delete userObject.password;
@@ -297,6 +291,8 @@ export const deleteUserRecord = async (userId) => {
         throw e;
     }
 
+    let restaurantWarning = null;
+
     if (user.role === 'RES_ADMIN_ROLE') {
         const restaurantUpdate = await mongoose.connection.collection('restaurants').updateOne(
             { assignedAdmin: new mongoose.Types.ObjectId(userId) },
@@ -304,12 +300,16 @@ export const deleteUserRecord = async (userId) => {
         );
 
         if (restaurantUpdate.matchedCount === 0) {
-            const e = new Error('No se encontró el restaurante asignado al administrador');
-            e.statusCode = 404;
-            throw e;
+            restaurantWarning = 'El usuario no tenía restaurante asignado';
+        } else {
+            //Se desasignó correctamente, restaurante sigue existiendo
+            restaurantWarning = 'El restaurante quedó sin administrador asignado. Puedes asignar uno nuevo';
         }
     }
 
     await User.deleteOne({ _id: userId });
-    return { deleted: true, userId };
+    return {
+        deleted: true,
+        userId,
+    };
 };
