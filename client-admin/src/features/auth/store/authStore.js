@@ -45,6 +45,10 @@ export const useAuthStore = create(
         });
       },
 
+      updateUser: (updates) => {
+        set((s) => ({ user: { ...s.user, ...updates } }));
+      },
+
       createUser: async (userData) => {
         try {
           set({ loading: true, error: null });

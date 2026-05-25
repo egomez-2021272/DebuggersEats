@@ -109,20 +109,9 @@ export const Tables = () => {
           </p>
         </div>
         <button
-          onClick={() => {
-            setSelected(null);
-            setModal(true);
-          }}
-          style={{
-            background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            padding: '10px 20px',
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
+          onClick={() => { setSelected(null); setModal(true); }}
+          className='dbe-btn-primary'
+          style={{ borderRadius: 10, padding: '10px 20px', fontSize: 13 }}
         >
           + Nueva mesa
         </button>
@@ -244,21 +233,9 @@ export const Tables = () => {
           </p>
           {tables.length === 0 && (
             <button
-              onClick={() => {
-                setSelected(null);
-                setModal(true);
-              }}
-              style={{
-                marginTop: 20,
-                background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '10px 24px',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              onClick={() => { setSelected(null); setModal(true); }}
+              className='dbe-btn-primary'
+              style={{ marginTop: 20, borderRadius: 10, padding: '10px 24px', fontSize: 13 }}
             >
               + Crear primera mesa
             </button>

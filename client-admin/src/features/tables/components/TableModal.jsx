@@ -1,32 +1,5 @@
 import { useState } from 'react';
 
-const inputSx = {
-  width: '100%',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 8,
-  padding: '8px 12px',
-  color: '#fff',
-  fontSize: 13,
-  outline: 'none',
-  boxSizing: 'border-box',
-};
-
-const Lbl = ({ text, req }) => (
-  <label
-    style={{
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.5)',
-      fontWeight: 600,
-      letterSpacing: '0.04em',
-      display: 'block',
-      marginBottom: 4,
-    }}
-  >
-    {text} {req && <span style={{ color: '#F2509C' }}>*</span>}
-  </label>
-);
-
 const LOCATIONS = ['Interior', 'Terraza', 'Ventana', 'Jardín', 'Otro'];
 
 export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => {
@@ -121,9 +94,11 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
 
         {/* Número */}
         <div style={{ marginBottom: 16 }}>
-          <Lbl text='Número o nombre de la mesa' req />
+          <label className='dbe-label mb-1'>
+            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+          </label>
           <input
-            style={inputSx}
+            className='dbe-input w-full px-3 py-2 text-sm'
             value={form.tableNumber}
             onChange={(e) => setF('tableNumber', e.target.value)}
             placeholder='Ej. Mesa 5, VIP-1, Terraza-A'
@@ -136,12 +111,14 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
 
         {/* Capacidad */}
         <div style={{ marginBottom: 16 }}>
-          <Lbl text='Capacidad (personas)' req />
+          <label className='dbe-label mb-1'>
+            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+          </label>
           <input
             type='number'
             min={1}
             max={20}
-            style={inputSx}
+            className='dbe-input w-full px-3 py-2 text-sm'
             value={form.capacity}
             onChange={(e) => setF('capacity', e.target.value)}
           />
@@ -152,7 +129,9 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
 
         {/* Ubicación */}
         <div style={{ marginBottom: 24 }}>
-          <Lbl text='Ubicación' />
+          <label className='dbe-label mb-1'>
+            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+          </label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {LOCATIONS.map((loc) => {
               const sel = form.location === loc;
@@ -181,17 +160,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
 
         {/* Error */}
         {error && (
-          <p
-            style={{
-              color: '#f87171',
-              fontSize: 13,
-              background: 'rgba(248,113,113,0.08)',
-              border: '1px solid rgba(248,113,113,0.2)',
-              borderRadius: 8,
-              padding: '8px 12px',
-              margin: '0 0 16px',
-            }}
-          >
+          <p className='dbe-error' style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '8px 12px', margin: '0 0 16px', fontSize: 13 }}>
             {error}
           </p>
         )}
@@ -216,19 +185,8 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            style={{
-              padding: '9px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: saving
-                ? 'rgba(255,255,255,0.1)'
-                : 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
+            className='dbe-btn-primary'
+            style={{ padding: '9px 24px', borderRadius: 8, fontSize: 13, opacity: saving ? 0.7 : 1 }}
           >
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear mesa'}
           </button>

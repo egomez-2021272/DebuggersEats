@@ -121,7 +121,7 @@ const ReviewCard = ({ review }) => {
                   background:
                     isReplying || !replyText.trim()
                       ? 'rgba(255,255,255,0.07)'
-                      : 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
+                      : 'var(--dbe-gradient-h)',
                   color: isReplying || !replyText.trim() ? 'rgba(255,255,255,0.3)' : '#fff',
                   border: 'none',
                   cursor: isReplying || !replyText.trim() ? 'not-allowed' : 'pointer',

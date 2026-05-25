@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useUserEventStore } from '../store/userEventStore.js';
 import { useAuthStore } from '../../auth/store/authStore.js';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
-import { useOutletContext } from 'react-router-dom';
+import { useRestaurantStore } from '../../restaurants/store/restaurantStore.js';
+import { formatDate } from '../../../shared/utils/formatters.js';
 
 const TYPE_CONFIG = {
   event: {
@@ -34,15 +35,6 @@ const TYPE_FILTERS = [
   { value: 'promotion', label: '🏷️ Promociones' },
   { value: 'coupon', label: '🎟️ Cupones' },
 ];
-
-const formatDate = (d) => {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('es-GT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
 
 const cuposLabel = (ev) => {
   if (!ev.max_capacity) return null;
@@ -108,17 +100,17 @@ const EventCard = ({ event, userId, restaurants, onAction }) => {
     ...(event.type === 'event'
       ? isInscrito
         ? {
-            background: 'rgba(248,113,113,0.12)',
-            color: '#f87171',
-            border: '1px solid rgba(248,113,113,0.25)',
-          }
+          background: 'rgba(248,113,113,0.12)',
+          color: '#f87171',
+          border: '1px solid rgba(248,113,113,0.25)',
+        }
         : { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
       : done
         ? {
-            background: 'rgba(74,222,128,0.1)',
-            color: '#4ade80',
-            border: '1px solid rgba(74,222,128,0.2)',
-          }
+          background: 'rgba(74,222,128,0.1)',
+          color: '#4ade80',
+          border: '1px solid rgba(74,222,128,0.2)',
+        }
         : { background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)', color: '#fff' }),
   };
 
@@ -255,7 +247,7 @@ const MetaPill = ({ icon, text, color }) => (
 
 // ── UserEventsSection ───────────────────────────────────────────────────────
 export const UserEventsSection = () => {
-  const { restaurants } = useOutletContext();
+  const { restaurants } = useRestaurantStore();
   const { events, loading, fetchPublicEvents, join, leave, apply } = useUserEventStore();
   const userId = useAuthStore((s) => s.user?._id || s.user?.id);
 

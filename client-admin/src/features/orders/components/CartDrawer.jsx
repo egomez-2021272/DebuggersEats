@@ -45,8 +45,10 @@ export const CartDrawer = () => {
                 className='fixed right-0 top-0 z-50 h-full w-full max-w-sm flex flex-col bg-[#111118] border-l border-white/10 shadow-2xl 
                 animate-[slideInRight_0.25s_ease-out]'
             >
-                <div className='flex items-center justify-between px-5 py-4
-                        bg-gradient-to-r from-pink-500 to-purple-500 shrink-0'>
+                <div
+                    className='flex items-center justify-between px-5 py-4 shrink-0'
+                    style={{ background: 'var(--dbe-gradient)' }}
+                >
                     <div>
                         <h2 className='text-lg font-bold text-white'>Tu carrito</h2>
                         {cart?.items?.length > 0 && (
@@ -108,8 +110,7 @@ export const CartDrawer = () => {
                                 <span>IVA (12%)</span>
                                 <span>Q{cart.iva?.toFixed(2)}</span>
                             </div>
-                            <div className='flex justify-between text-white font-bold text-base pt-1
-                              border-t border-white/10'>
+                            <div className='flex justify-between text-white font-bold text-base pt-1 border-t border-white/10'>
                                 <span>Total</span>
                                 <span>Q{cart.total?.toFixed(2)}</span>
                             </div>
@@ -117,9 +118,7 @@ export const CartDrawer = () => {
 
                         <button
                             onClick={() => setShowCheckout(true)}
-                            className='w-full py-2.5 rounded-lg text-sm font-semibold text-white transition
-                         hover:opacity-90 active:scale-95'
-                            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+                            className='dbe-btn-primary w-full py-2.5 rounded-lg text-sm font-semibold'
                         >
                             Confirmar pedido
                         </button>

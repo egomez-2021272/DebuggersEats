@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../../auth/store/authStore.js';
 
 const DAYS = [
@@ -29,41 +29,10 @@ const INIT = {
   tags: '',
 };
 
-const label = (txt, req = false) => (
-  <label
-    style={{
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.5)',
-      fontWeight: 600,
-      letterSpacing: '0.04em',
-      display: 'block',
-      marginBottom: 4,
-    }}
-  >
-    {txt} {req && <span style={{ color: '#F2509C' }}>*</span>}
-  </label>
-);
+// Los inputs de fecha/time/select necesitan colorScheme dark que dbe-input no incluye
+const extraSx = { colorScheme: 'dark', boxSizing: 'border-box' };
 
-const inputSx = {
-  width: '100%',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 8,
-  padding: '8px 12px',
-  color: '#fff',
-  fontSize: 13,
-  outline: 'none',
-  boxSizing: 'border-box',
-  colorScheme: 'dark',
-};
-
-const selectSx = {
-  ...inputSx,
-  cursor: 'pointer',
-  colorScheme: 'dark',
-};
-
-export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
+export const EventModal = ({ event, onSave, onClose, saving }) => {
   const user = useAuthStore((s) => s.user);
   const isEdit = Boolean(event?._id);
 
@@ -126,10 +95,7 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
         time_slots: form.schedule.time_slots.filter((s) => s.from && s.to),
       },
       visibility: form.visibility,
-      tags: form.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
     };
 
     if (form.max_capacity) payload.max_capacity = Number(form.max_capacity);
@@ -141,94 +107,46 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(0,0,0,0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        style={{
-          background: '#111118',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 16,
-          width: '100%',
-          maxWidth: 560,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '28px 28px',
-          scrollbarWidth: 'thin',
-        }}
+        style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', padding: '28px 28px', scrollbarWidth: 'thin' }}
       >
         {/* Encabezado */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 24,
-          }}
-        >
-          <div>
-            <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>
-              {isEdit ? 'Editar evento' : 'Nuevo evento gastronómico'}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'rgba(255,255,255,0.4)',
-              fontSize: 20,
-              cursor: 'pointer',
-            }}
-          >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>
+            {isEdit ? 'Editar evento' : 'Nuevo evento gastronómico'}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer' }}>
             ✕
           </button>
         </div>
 
-        {/* ── Sección: Información básica ── */}
+        {/* Información básica */}
         <Section title='Información básica'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div style={{ gridColumn: '1/-1' }}>
-              {label('Nombre', true)}
+              <label className='dbe-label mb-1'>Nombre <span style={{ color: 'var(--dbe-pink)' }}>*</span></label>
               <input
-                style={inputSx}
+                className='dbe-input w-full px-3 py-2 text-sm'
+                style={extraSx}
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
                 placeholder='Ej. Noche de tapas españolas'
               />
             </div>
-
             <div>
-              {label('Tipo', true)}
-              <select
-                style={selectSx}
-                value={form.type}
-                onChange={(e) => set('type', e.target.value)}
-              >
+              <label className='dbe-label mb-1'>Tipo <span style={{ color: 'var(--dbe-pink)' }}>*</span></label>
+              <select className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.type} onChange={(e) => set('type', e.target.value)}>
                 <option value='event'>Evento</option>
                 <option value='promotion'>Promoción</option>
                 <option value='coupon'>Cupón</option>
               </select>
             </div>
-
             <div>
-              {label('Estado')}
-              <select
-                style={selectSx}
-                value={form.status}
-                onChange={(e) => set('status', e.target.value)}
-              >
+              <label className='dbe-label mb-1'>Estado</label>
+              <select className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.status} onChange={(e) => set('status', e.target.value)}>
                 <option value='draft'>Borrador</option>
                 <option value='active'>Activo</option>
                 <option value='paused'>Pausado</option>
@@ -236,11 +154,11 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                 <option value='cancelled'>Cancelado</option>
               </select>
             </div>
-
             <div style={{ gridColumn: '1/-1' }}>
-              {label('Descripción')}
+              <label className='dbe-label mb-1'>Descripción</label>
               <textarea
-                style={{ ...inputSx, resize: 'vertical', minHeight: 72 }}
+                className='dbe-input w-full px-3 py-2 text-sm'
+                style={{ ...extraSx, resize: 'vertical', minHeight: 72 }}
                 value={form.description}
                 onChange={(e) => set('description', e.target.value)}
                 placeholder='Descripción breve del evento...'
@@ -249,34 +167,20 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
           </div>
         </Section>
 
-        {/* ── Sección: Horario ── */}
+        {/* Horario */}
         <Section title='Horario'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              {label('Fecha inicio', true)}
-              <input
-                type='date'
-                style={inputSx}
-                value={form.schedule.start_date}
-                onChange={(e) => setSched('start_date', e.target.value)}
-              />
+              <label className='dbe-label mb-1'>Fecha inicio <span style={{ color: 'var(--dbe-pink)' }}>*</span></label>
+              <input type='date' className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.schedule.start_date} onChange={(e) => setSched('start_date', e.target.value)} />
             </div>
             <div>
-              {label('Fecha fin', true)}
-              <input
-                type='date'
-                style={inputSx}
-                value={form.schedule.end_date}
-                onChange={(e) => setSched('end_date', e.target.value)}
-              />
+              <label className='dbe-label mb-1'>Fecha fin <span style={{ color: 'var(--dbe-pink)' }}>*</span></label>
+              <input type='date' className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.schedule.end_date} onChange={(e) => setSched('end_date', e.target.value)} />
             </div>
             <div>
-              {label('Recurrencia')}
-              <select
-                style={selectSx}
-                value={form.schedule.recurrence}
-                onChange={(e) => setSched('recurrence', e.target.value)}
-              >
+              <label className='dbe-label mb-1'>Recurrencia</label>
+              <select className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.schedule.recurrence} onChange={(e) => setSched('recurrence', e.target.value)}>
                 <option value='none'>Sin recurrencia</option>
                 <option value='daily'>Diario</option>
                 <option value='weekly'>Semanal</option>
@@ -284,11 +188,12 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
               </select>
             </div>
             <div>
-              {label('Horario (primer slot)')}
+              <label className='dbe-label mb-1'>Horario (primer slot)</label>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input
                   type='time'
-                  style={{ ...inputSx, flex: 1 }}
+                  className='dbe-input px-3 py-2 text-sm'
+                  style={{ ...extraSx, flex: 1 }}
                   value={form.schedule.time_slots[0]?.from || ''}
                   onChange={(e) => {
                     const slots = [...form.schedule.time_slots];
@@ -299,7 +204,8 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                 <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>a</span>
                 <input
                   type='time'
-                  style={{ ...inputSx, flex: 1 }}
+                  className='dbe-input px-3 py-2 text-sm'
+                  style={{ ...extraSx, flex: 1 }}
                   value={form.schedule.time_slots[0]?.to || ''}
                   onChange={(e) => {
                     const slots = [...form.schedule.time_slots];
@@ -309,10 +215,8 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                 />
               </div>
             </div>
-
-            {/* Días de la semana */}
             <div style={{ gridColumn: '1/-1' }}>
-              {label('Días de la semana')}
+              <label className='dbe-label mb-1'>Días de la semana</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {DAYS.map((d) => {
                   const sel = form.schedule.days_of_week.includes(d.value);
@@ -321,14 +225,10 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
                       key={d.value}
                       onClick={() => toggleDay(d.value)}
                       style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        border: sel ? '1px solid #C35BB9' : '1px solid rgba(255,255,255,0.1)',
+                        padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        border: sel ? '1px solid var(--dbe-purple-pink)' : '1px solid rgba(255,255,255,0.1)',
                         background: sel ? 'rgba(195,91,185,0.2)' : 'rgba(255,255,255,0.04)',
-                        color: sel ? '#C35BB9' : 'rgba(255,255,255,0.4)',
+                        color: sel ? 'var(--dbe-purple-pink)' : 'rgba(255,255,255,0.4)',
                         transition: 'all 0.15s',
                       }}
                     >
@@ -341,74 +241,41 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
           </div>
         </Section>
 
-        {/* ── Sección: Capacidad y uso ── */}
+        {/* Capacidad y uso */}
         <Section title='Capacidad y uso'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              {label('Capacidad máxima')}
-              <input
-                type='number'
-                min='1'
-                style={inputSx}
-                placeholder='Sin límite'
-                value={form.max_capacity}
-                onChange={(e) => set('max_capacity', e.target.value)}
-              />
+              <label className='dbe-label mb-1'>Capacidad máxima</label>
+              <input type='number' min='1' className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} placeholder='Sin límite' value={form.max_capacity} onChange={(e) => set('max_capacity', e.target.value)} />
             </div>
             <div>
-              {label('Máx. usos (cupón/promo)')}
-              <input
-                type='number'
-                min='1'
-                style={inputSx}
-                placeholder='Sin límite'
-                value={form.max_usos}
-                onChange={(e) => set('max_usos', e.target.value)}
-              />
+              <label className='dbe-label mb-1'>Máx. usos (cupón/promo)</label>
+              <input type='number' min='1' className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} placeholder='Sin límite' value={form.max_usos} onChange={(e) => set('max_usos', e.target.value)} />
             </div>
           </div>
         </Section>
 
-        {/* ── Sección: Visibilidad y tags ── */}
+        {/* Visibilidad y tags */}
         <Section title='Visibilidad y etiquetas'>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              {label('Visibilidad')}
-              <select
-                style={selectSx}
-                value={form.visibility}
-                onChange={(e) => set('visibility', e.target.value)}
-              >
+              <label className='dbe-label mb-1'>Visibilidad</label>
+              <select className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} value={form.visibility} onChange={(e) => set('visibility', e.target.value)}>
                 <option value='public'>Público</option>
                 <option value='private'>Privado</option>
                 <option value='members_only'>Solo socios</option>
               </select>
             </div>
             <div>
-              {label('Tags (separados por coma)')}
-              <input
-                style={inputSx}
-                placeholder='tapas, vino, 2x1'
-                value={form.tags}
-                onChange={(e) => set('tags', e.target.value)}
-              />
+              <label className='dbe-label mb-1'>Tags (separados por coma)</label>
+              <input className='dbe-input w-full px-3 py-2 text-sm' style={extraSx} placeholder='tapas, vino, 2x1' value={form.tags} onChange={(e) => set('tags', e.target.value)} />
             </div>
           </div>
         </Section>
 
         {/* Error */}
         {error && (
-          <p
-            style={{
-              color: '#f87171',
-              fontSize: 13,
-              background: 'rgba(248,113,113,0.08)',
-              border: '1px solid rgba(248,113,113,0.2)',
-              borderRadius: 8,
-              padding: '8px 12px',
-              margin: '0 0 16px',
-            }}
-          >
+          <p className='dbe-error' style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '8px 12px', margin: '0 0 16px', fontSize: 13 }}>
             {error}
           </p>
         )}
@@ -417,36 +284,15 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button
             onClick={onClose}
-            style={{
-              padding: '9px 20px',
-              borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'none',
-              color: 'rgba(255,255,255,0.5)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            style={{
-              padding: '9px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: saving
-                ? 'rgba(255,255,255,0.1)'
-                : 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-            }}
+            className='dbe-btn-primary'
+            style={{ padding: '9px 24px', fontSize: 13, opacity: saving ? 0.7 : 1 }}
           >
             {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear evento'}
           </button>
@@ -458,17 +304,7 @@ export const EventModal = ({ event, restaurants, onSave, onClose, saving }) => {
 
 const Section = ({ title, children }) => (
   <div style={{ marginBottom: 24 }}>
-    <p
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.25)',
-        marginBottom: 12,
-        margin: '0 0 12px',
-      }}
-    >
+    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
       {title}
     </p>
     {children}

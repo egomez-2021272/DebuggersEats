@@ -6,12 +6,16 @@ import logoImg from '../../../assets/img/DebuggersEats_logo.png';
 
 const GRADIENT = 'linear-gradient(135deg, #F2509C 0%, #C35BB9 50%, #9362D9 100%)';
 
-const inputStyle = {
-  background: 'rgba(255,255,255,0.07)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  color: '#fff',
-  borderRadius: '8px',
-};
+const fields = [
+  {
+    name: 'newPassword',
+    label: 'Nueva contraseña',
+    rules: {
+      required: 'La contraseña es obligatoria',
+      minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+    },
+  },
+];
 
 export const ResetPasswordPage = () => {
   const { token } = useParams();
@@ -22,6 +26,18 @@ export const ResetPasswordPage = () => {
     getValues,
     formState: { errors, isSubmitting },
   } = useForm();
+
+  const allFields = [
+    ...fields,
+    {
+      name: 'confirmPassword',
+      label: 'Confirmar contraseña',
+      rules: {
+        required: 'Confirma tu contraseña',
+        validate: (v) => v === getValues('newPassword') || 'Las contraseñas no coinciden',
+      },
+    },
+  ];
 
   const onSubmit = async ({ newPassword }) => {
     try {
@@ -34,25 +50,6 @@ export const ResetPasswordPage = () => {
       );
     }
   };
-
-  const fields = [
-    {
-      name: 'newPassword',
-      label: 'Nueva contraseña',
-      rules: {
-        required: 'La contraseña es obligatoria',
-        minLength: { value: 8, message: 'Mínimo 8 caracteres' },
-      },
-    },
-    {
-      name: 'confirmPassword',
-      label: 'Confirmar contraseña',
-      rules: {
-        required: 'Confirma tu contraseña',
-        validate: (v) => v === getValues('newPassword') || 'Las contraseñas no coinciden',
-      },
-    },
-  ];
 
   return (
     <div
@@ -80,40 +77,23 @@ export const ResetPasswordPage = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4 px-6 py-6'>
-          {fields.map(({ name, label, rules }) => (
+          {allFields.map(({ name, label, rules }) => (
             <div key={name}>
-              <label
-                className='block mb-1.5'
-                style={{
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '0.7rem',
-                  fontWeight: '600',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {label}
-              </label>
+              <label className='dbe-label mb-1.5'>{label}</label>
               <input
                 type='password'
                 placeholder='••••••••'
-                className='w-full px-3 py-2.5 text-sm outline-none'
-                style={inputStyle}
+                className='dbe-input w-full px-3 py-2.5 text-sm transition'
                 {...register(name, rules)}
               />
-              {errors[name] && (
-                <p className='text-xs mt-1' style={{ color: '#F2509C' }}>
-                  {errors[name].message}
-                </p>
-              )}
+              {errors[name] && <p className='dbe-error'>{errors[name].message}</p>}
             </div>
           ))}
 
           <button
             type='submit'
             disabled={isSubmitting}
-            className='w-full py-2.5 text-sm font-semibold text-white rounded-lg transition'
-            style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+            className='dbe-btn-primary w-full py-2.5 text-sm'
           >
             {isSubmitting ? 'Guardando...' : 'Guardar contraseña'}
           </button>
@@ -121,7 +101,7 @@ export const ResetPasswordPage = () => {
           <button
             type='button'
             onClick={() => navigate('/')}
-            className='w-full text-center text-xs transition'
+            className='w-full text-center text-xs transition hover:opacity-80'
             style={{ color: '#C35BB9' }}
           >
             Volver al inicio

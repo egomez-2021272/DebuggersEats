@@ -8,7 +8,7 @@ export const UnauthorizedPage = () => {
       style={{ background: '#0B0B0D', color: '#fff' }}
     >
       <div className='text-center'>
-        <h2 className='text-2xl font-bold mb-2' style={{ color: '#F2509C' }}>
+        <h2 className='text-2xl font-bold mb-2' style={{ color: 'var(--dbe-pink)' }}>
           Acceso denegado
         </h2>
         <p className='text-sm' style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -17,8 +17,7 @@ export const UnauthorizedPage = () => {
       </div>
       <button
         onClick={() => navigate('/')}
-        className='px-5 py-2 text-sm font-semibold text-white rounded-lg'
-        style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+        className='dbe-btn-primary px-5 py-2 text-sm'
       >
         Volver
       </button>

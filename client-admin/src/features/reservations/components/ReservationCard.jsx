@@ -1,3 +1,5 @@
+import { formatDateLong } from '../../../shared/utils/formatters.js';
+
 const STATUS_META = {
   PENDIENTE: {
     label: 'Pendiente',
@@ -27,16 +29,6 @@ const STATUS_META = {
     border: 'rgba(255,255,255,0.08)',
     dot: false,
   },
-};
-
-const fmtDate = (iso) => {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-GT', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
 };
 
 export const ReservationCard = ({ reservation, onEdit, onDelete, onConfirmToken, isResAdmin }) => {
@@ -123,7 +115,7 @@ export const ReservationCard = ({ reservation, onEdit, onDelete, onConfirmToken,
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-            📅 {fmtDate(reservation.reservationDate)}
+            📅 {formatDateLong(reservation.reservationDate)}
           </span>
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
             🕐 {reservation.reservationHour}

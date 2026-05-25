@@ -45,7 +45,7 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
       >
         <div
           className='p-5 text-white'
-          style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+          style={{ background: 'var(--dbe-gradient-h)' }}
         >
           <h2 className='text-xl font-bold'>Nuevo Usuario</h2>
           <p className='text-xs opacity-75 mt-0.5'>

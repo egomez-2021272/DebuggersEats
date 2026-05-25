@@ -59,9 +59,11 @@ export const Reservations = () => {
 
   useEffect(() => {
     if (!isResAdmin || restaurants.length === 0) return;
-    const rest = restaurants[0];
-    setRestaurantFilter(rest._id);
-    fetchByRestaurant(rest.name);
+
+    const myRestaurant = restaurants.find((r) => r._id === user?.restaurantId) ?? restaurants[0];
+
+    setRestaurantFilter(myRestaurant._id);
+    fetchByRestaurant(myRestaurant.name);
   }, [restaurants]);
 
   const handleRestaurantFilterChange = async (val) => {
@@ -87,7 +89,17 @@ export const Reservations = () => {
     const q = search.trim().toLowerCase();
     const matchSearch =
       !q || r.peopleName?.toLowerCase().includes(q) || r.restaurantName?.toLowerCase().includes(q);
-    return matchStatus && matchRest && matchSearch;
+
+    const matchDate = !dateFilter || (() => {
+      if (!r.reservationDate) return false;
+      const d = new Date(r.reservationDate);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}` === dateFilter;
+    })();
+
+    return matchStatus && matchRest && matchSearch && matchDate;
   });
 
   const counts = reservations.reduce((acc, r) => {
@@ -176,16 +188,8 @@ export const Reservations = () => {
         {!isResAdmin && (
           <button
             onClick={() => setModal(true)}
-            style={{
-              background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 13,
-              border: 'none',
-              borderRadius: 10,
-              padding: '9px 20px',
-              cursor: 'pointer',
-            }}
+            className='dbe-btn-primary'
+            style={{ fontSize: 13, borderRadius: 10, padding: '9px 20px' }}
           >
             + Nueva reservación
           </button>
@@ -243,8 +247,7 @@ export const Reservations = () => {
                   cursor: 'pointer',
                   border: active ? 'none' : '1px solid rgba(255,255,255,0.12)',
                   background: active
-                    ? 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)'
-                    : 'rgba(255,255,255,0.05)',
+                    ? 'var(--dbe-gradient-h)' : 'rgba(255,255,255,0.05)',
                   color: active ? '#fff' : 'rgba(255,255,255,0.5)',
                   transition: 'all 0.15s',
                 }}
@@ -310,24 +313,17 @@ export const Reservations = () => {
           {reservations.length === 0 && !isResAdmin && (
             <button
               onClick={() => setModal(true)}
-              style={{
-                marginTop: 16,
-                background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 13,
-                border: 'none',
-                borderRadius: 10,
-                padding: '9px 20px',
-                cursor: 'pointer',
-              }}
+              className='dbe-btn-primary'
+              style={{ marginTop: 16, fontSize: 13, borderRadius: 10, padding: '9px 20px' }}
             >
               + Crear primera reservación
             </button>
           )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18
+        }}>
           {filtered.map((r) => (
             <ReservationCard
               key={r._id}

@@ -1,3 +1,5 @@
+import { formatDate } from '../../../shared/utils/formatters.js';
+
 const TYPE_META = {
   event: {
     label: 'Evento',
@@ -29,15 +31,6 @@ const STATUS_META = {
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-const fmtDate = (iso) => {
-  if (!iso) return 'Sin fecha';
-  return new Date(iso).toLocaleDateString('es-GT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
-
 const fmtTime = (slot) => (slot ? `${slot.from}–${slot.to}` : '');
 
 const daysLabel = (daysArr) => {
@@ -61,13 +54,11 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
   const dLabel = daysLabel(schedule.days_of_week);
   const timeSlot = schedule.time_slots?.[0];
 
-  // Progreso de capacidad
   const hasCap = event.max_capacity > 0;
   const capPct = hasCap
     ? Math.min(100, Math.round((event.current_capacity / event.max_capacity) * 100))
     : null;
 
-  // Progreso de usos
   const hasUsos = event.max_usos > 0;
   const usosPct = hasUsos
     ? Math.min(100, Math.round((event.usos_actuales / event.max_usos) * 100))
@@ -88,14 +79,14 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-3px)';
-        e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.4)`;
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'none';
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      {/* ── Header: badge tipo + estado ── */}
+      {/* Header: badge tipo + estado */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span
           style={{
@@ -112,54 +103,30 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
         >
           {type.label}
         </span>
-
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            fontSize: 12,
-            color: status.color,
-          }}
-        >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: status.color }}>
           {status.dot && (
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: status.color,
-                display: 'inline-block',
-              }}
-            />
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: status.color, display: 'inline-block' }} />
           )}
           {status.label}
         </span>
       </div>
 
-      {/* ── Nombre y descripción ── */}
+      {/* Nombre y descripción */}
       <div>
         <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0, lineHeight: 1.3 }}>
           {event.name}
         </h3>
         {event.description && (
-          <p
-            style={{
-              color: 'rgba(255,255,255,0.45)',
-              fontSize: 13,
-              margin: '4px 0 0',
-              lineHeight: 1.5,
-            }}
-          >
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, margin: '4px 0 0', lineHeight: 1.5 }}>
             {event.description}
           </p>
         )}
       </div>
 
-      {/* ── Fechas y horario ── */}
+      {/* Fechas y horario */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-          {fmtDate(schedule.start_date)} — {fmtDate(schedule.end_date)}
+          {formatDate(schedule.start_date)} — {formatDate(schedule.end_date)}
         </span>
         {(recLabel || dLabel || timeSlot) && (
           <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
@@ -168,150 +135,59 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
         )}
       </div>
 
-      {/* ── Visibilidad ── */}
+      {/* Visibilidad y tags */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {event.visibility && (
-          <span
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              color: 'rgba(255,255,255,0.4)',
-              fontSize: 11,
-              padding: '2px 8px',
-              borderRadius: 20,
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            {event.visibility === 'public'
-              ? 'Público'
-              : event.visibility === 'private'
-                ? 'Privado'
-                : 'Solo socios'}
+          <span style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)', fontSize: 11, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)' }}>
+            {event.visibility === 'public' ? 'Público' : event.visibility === 'private' ? 'Privado' : 'Solo socios'}
           </span>
         )}
         {event.tags?.slice(0, 3).map((tag) => (
-          <span
-            key={tag}
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              color: 'rgba(255,255,255,0.3)',
-              fontSize: 11,
-              padding: '2px 8px',
-              borderRadius: 20,
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
+          <span key={tag} style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', fontSize: 11, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)' }}>
             #{tag}
           </span>
         ))}
       </div>
 
-      {/* ── Barra de progreso capacidad (eventos) ── */}
+      {/* Barra capacidad */}
       {hasCap && (
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.4)',
-              marginBottom: 4,
-            }}
-          >
-            <span>
-              {event.current_capacity}/{event.max_capacity}
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+            <span>{event.current_capacity}/{event.max_capacity}</span>
             <span>{capPct}%</span>
           </div>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.08)',
-              borderRadius: 4,
-              height: 5,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: `${capPct}%`,
-                height: '100%',
-                background: capPct >= 90 ? '#f87171' : capPct >= 60 ? '#C35BB9' : '#9362D9',
-                borderRadius: 4,
-                transition: 'width 0.4s ease',
-              }}
-            />
+          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+            <div style={{ width: `${capPct}%`, height: '100%', background: capPct >= 90 ? '#f87171' : capPct >= 60 ? '#C35BB9' : '#9362D9', borderRadius: 4, transition: 'width 0.4s ease' }} />
           </div>
         </div>
       )}
 
-      {/* ── Barra de usos (cupones / promociones) ── */}
+      {/* Barra usos */}
       {hasUsos && (
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.4)',
-              marginBottom: 4,
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
             <span>{event.usos_actuales} usos</span>
             <span>Máx. {event.max_usos}</span>
           </div>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.08)',
-              borderRadius: 4,
-              height: 5,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: `${usosPct}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #F2509C 0%, #C35BB9 100%)',
-                borderRadius: 4,
-                transition: 'width 0.4s ease',
-              }}
-            />
+          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+            <div style={{ width: `${usosPct}%`, height: '100%', background: 'var(--dbe-gradient-h)', borderRadius: 4, transition: 'width 0.4s ease' }} />
           </div>
         </div>
       )}
 
       {!hasCap && !hasUsos && (
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-          {event.usos_actuales !== undefined
-            ? `${event.usos_actuales} usos · Sin límite`
-            : 'Sin límite de capacidad'}
+          {event.usos_actuales !== undefined ? `${event.usos_actuales} usos · Sin límite` : 'Sin límite de capacidad'}
         </p>
       )}
 
-      {/* ── Acciones (solo RES_ADMIN_ROLE) ── */}
+      {/* Acciones */}
       {isResAdmin && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: 4,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
-            paddingTop: 12,
-          }}
-        >
+        <div style={{ display: 'flex', gap: 8, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
           <button
             onClick={() => onEdit(event)}
-            style={{
-              flex: 1,
-              background: 'rgba(255,255,255,0.06)',
-              color: 'rgba(255,255,255,0.7)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              padding: '6px 0',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'background 0.15s',
-            }}
+            className='transition'
+            style={{ flex: 1, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
           >
@@ -319,18 +195,8 @@ export const EventCard = ({ event, onEdit, onDelete, isResAdmin }) => {
           </button>
           <button
             onClick={() => onDelete(event._id)}
-            style={{
-              flex: 1,
-              background: 'rgba(248,113,113,0.08)',
-              color: '#f87171',
-              border: '1px solid rgba(248,113,113,0.2)',
-              borderRadius: 8,
-              padding: '6px 0',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'background 0.15s',
-            }}
+            className='transition'
+            style={{ flex: 1, background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '6px 0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(248,113,113,0.15)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(248,113,113,0.08)')}
           >

@@ -33,10 +33,10 @@ const MyReviewCard = ({ review, restaurantName }) => {
             <p className='text-xs mt-0.5' style={{ color: 'rgba(255,255,255,0.3)' }}>
               {review.createdAt
                 ? new Date(review.createdAt).toLocaleDateString('es-GT', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
                 : 'Fecha no disponible'}
             </p>
           </div>
@@ -65,7 +65,7 @@ const MyReviewCard = ({ review, restaurantName }) => {
             <div className='flex items-center gap-1.5 mb-1'>
               <span
                 className='w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0'
-                style={{ background: 'linear-gradient(135deg, #F2509C, #9362D9)', color: '#fff' }}
+                style={{ background: 'var(--dbe-gradient)', color: '#fff' }}
               >
                 R
               </span>
@@ -169,10 +169,7 @@ export const MyReviews = () => {
             onClick={() => setFilterReply(key)}
             className='px-3.5 py-1.5 rounded-full text-xs font-semibold border-none cursor-pointer transition-all'
             style={{
-              background:
-                filterReply === key
-                  ? 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)'
-                  : 'rgba(255,255,255,0.06)',
+              background: filterReply === key ? 'var(--dbe-gradient-h)' : 'rgba(255,255,255,0.06)',
               color: filterReply === key ? '#fff' : 'rgba(255,255,255,0.45)',
               outline: filterReply === key ? 'none' : '1px solid rgba(255,255,255,0.1)',
             }}
@@ -188,9 +185,7 @@ export const MyReviews = () => {
             className='px-3.5 py-1.5 rounded-full text-xs font-semibold border-none cursor-pointer transition-all outline-none'
             style={{
               background:
-                filterRestaurant !== 'ALL'
-                  ? 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)'
-                  : 'rgba(255,255,255,0.06)',
+                filterRestaurant !== 'ALL' ? 'var(--dbe-gradient-h)' : 'rgba(255,255,255,0.06)',
               color: filterRestaurant !== 'ALL' ? '#fff' : 'rgba(255,255,255,0.45)',
               outline: filterRestaurant !== 'ALL' ? 'none' : '1px solid rgba(255,255,255,0.1)',
             }}
