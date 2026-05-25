@@ -95,7 +95,7 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
       >
         <div
           className='p-4 sm:p-5 text-white sticky top-0 z-10'
-          style={{ background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }}
+          style={{ background: 'var(--dbe-gradient-h)' }}
         >
           <h2 className='text-xl sm:text-2xl font-bold'>
             {restaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}
