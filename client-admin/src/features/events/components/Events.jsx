@@ -44,6 +44,7 @@ export const Events = () => {
     setSelected(event);
     setModal(true);
   };
+  
   const handleClose = () => {
     setModal(false);
     setSelected(null);
@@ -78,58 +79,25 @@ export const Events = () => {
 
   return (
     <div style={{ padding: '24px 20px' }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 24,
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ color: '#fff', fontWeight: 700, fontSize: 26, margin: 0 }}>
-            Eventos Gastronómicos
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, margin: '4px 0 0' }}>
-            Noches especiales, promociones y cupones
-          </p>
+          <h1 style={{ color: '#fff', fontWeight: 700, fontSize: 26, margin: 0 }}>Eventos Gastronómicos</h1>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, margin: '4px 0 0' }}>Noches especiales, promociones y cupones</p>
         </div>
         {isResAdmin && (
           <button
-            onClick={() => {
-              setSelected(null);
-              setModal(true);
-            }}
-            style={{
-              background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 13,
-              border: 'none',
-              borderRadius: 10,
-              padding: '9px 20px',
-              cursor: 'pointer',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            onClick={() => { setSelected(null); setModal(true); }}
+            className='dbe-btn-primary'
+            style={{ fontSize: 13, padding: '9px 20px', borderRadius: 10 }}
           >
             + Nuevo evento
           </button>
         )}
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 12,
-          marginBottom: 20,
-          flexWrap: 'wrap',
-          alignItems: 'center',
-        }}
-      >
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 6 }}>
           {TYPE_FILTERS.map((f) => {
             const active = typeFilter === f.value;
@@ -138,15 +106,9 @@ export const Events = () => {
                 key={f.value}
                 onClick={() => setTypeFilter(f.value)}
                 style={{
-                  padding: '6px 14px',
-                  borderRadius: 20,
-                  fontSize: 13,
-                  fontWeight: active ? 700 : 500,
-                  cursor: 'pointer',
+                  padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer',
                   border: active ? 'none' : '1px solid rgba(255,255,255,0.12)',
-                  background: active
-                    ? 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)'
-                    : 'rgba(255,255,255,0.05)',
+                  background: active ? 'var(--dbe-gradient-h)' : 'rgba(255,255,255,0.05)',
                   color: active ? '#fff' : 'rgba(255,255,255,0.5)',
                   transition: 'all 0.15s',
                 }}
@@ -160,16 +122,7 @@ export const Events = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder='Buscar evento...'
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: '6px 12px',
-            color: '#fff',
-            fontSize: 13,
-            outline: 'none',
-            minWidth: 180,
-          }}
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 13, outline: 'none', minWidth: 180 }}
         />
       </div>
 
@@ -177,64 +130,32 @@ export const Events = () => {
         {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
       </p>
 
+      {/* Contenido */}
       {filtered.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            background: 'rgba(255,255,255,0.02)',
-            borderRadius: 14,
-            border: '1px dashed rgba(255,255,255,0.08)',
-          }}
-        >
+        <div style={{ textAlign: 'center', padding: '64px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px dashed rgba(255,255,255,0.08)' }}>
           <p style={{ fontSize: 32, margin: '0 0 8px' }}>🎉</p>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
-            {events.length === 0
-              ? 'No hay eventos registrados aún.'
-              : 'Sin resultados para los filtros seleccionados.'}
+            {events.length === 0 ? 'No hay eventos registrados aún.' : 'Sin resultados para los filtros seleccionados.'}
           </p>
           {isResAdmin && events.length === 0 && (
             <button
               onClick={() => setModal(true)}
-              style={{
-                marginTop: 16,
-                background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 13,
-                border: 'none',
-                borderRadius: 10,
-                padding: '9px 20px',
-                cursor: 'pointer',
-              }}
+              className='dbe-btn-primary'
+              style={{ marginTop: 16, fontSize: 13, padding: '9px 20px', borderRadius: 10 }}
             >
               + Crear primer evento
             </button>
           )}
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 18,
-          }}
-        >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
           {filtered.map((ev) => (
-            <EventCard
-              key={ev._id}
-              event={ev}
-              isResAdmin={isResAdmin}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+            <EventCard key={ev._id} event={ev} isResAdmin={isResAdmin} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
         </div>
       )}
 
-      {modal && (
-        <EventModal event={selected} onSave={handleSave} onClose={handleClose} saving={saving} />
-      )}
+      {modal && <EventModal event={selected} onSave={handleSave} onClose={handleClose} saving={saving} />}
     </div>
   );
 };
