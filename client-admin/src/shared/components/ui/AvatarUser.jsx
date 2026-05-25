@@ -74,18 +74,6 @@ export const AvatarUser = () => {
           </div>
 
           <ul className='p-2 text-sm'>
-            <li>
-              <Link
-                to='/dashboard/restaurants'
-                onClick={() => setOpen(false)}
-                className='block w-full px-3 py-2 rounded-lg transition'
-                style={{ color: 'rgba(255,255,255,0.7)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                Restaurantes
-              </Link>
-            </li>
 
             <li>
               <button

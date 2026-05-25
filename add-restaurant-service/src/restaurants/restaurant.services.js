@@ -23,6 +23,18 @@ export const getRestaurantByName = async (name) => {
     return Restaurant.findOne({ name: name.trim() });
 };
 
+export const deleteRestaurantRecord = async (restaurantId) => {
+    const restaurant = await Restaurant.findByIdAndDelete(restaurantId);
+
+    if (!restaurant) {
+        const e = new Error('Restaurante no encontrado');
+        e.statusCode = 404;
+        throw e;
+    }
+
+    return { deleted: true, restaurant };
+};
+
 export const uploadRestaurantPhotoService = async ({ restaurantId, file }) => {
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) throw new Error('Restaurante no encontrado');

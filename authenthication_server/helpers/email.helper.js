@@ -16,7 +16,7 @@ const createTransporter = () => {
 
 export const sendActivationEmail = async (email, token, firstName) => {
     const activationLink = `${process.env.FRONTEND_URL || 'http://localhost:3013/debuggersEatsAdmin/v1/auth'}/activate/${token}`;
-    
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -38,7 +38,7 @@ export const sendActivationEmail = async (email, token, firstName) => {
             </div>
         `
     };
-    
+
     try {
         const transporter = createTransporter();
         await transporter.sendMail(mailOptions);
@@ -71,7 +71,7 @@ export const sendWelcomeEmail = async (email, firstName, username) => {
             </div>
         `
     };
-    
+
     try {
         const transporter = createTransporter();
         await transporter.sendMail(mailOptions);
@@ -82,7 +82,7 @@ export const sendWelcomeEmail = async (email, firstName, username) => {
 
 export const sendPasswordResetEmail = async (email, token, username) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-    
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -111,7 +111,7 @@ export const sendPasswordResetEmail = async (email, token, username) => {
             </div>
         `
     };
-    
+
     try {
         const transporter = createTransporter();
         await transporter.sendMail(mailOptions);
@@ -143,7 +143,7 @@ export const sendPasswordChangedEmail = async (email, firstName) => {
             </div>
         `
     };
-    
+
     try {
         const transporter = createTransporter();
         await transporter.sendMail(mailOptions);
