@@ -2,67 +2,47 @@ import { useEffect, useState } from 'react';
 import { useReports } from '../hooks/useReports.js';
 import { useUIStore } from '../../auth/store/uiStore.js';
 import { FuenteBadge } from '../components/FuenteBadge.jsx';
+import { StatCard } from '../components/StatCard.jsx';
+import { BarChart } from '../components/BarChart.jsx';
+import { ReportTable } from '../components/ReportTable.jsx';
+import { ExportPdfButton } from '../components/ExportPdfButton.jsx';
 import { Spinner } from '../../auth/components/Spinner.jsx';
-import { showError } from '../../../shared/utils/toast.js';
+import { showError, showSuccess } from '../../../shared/utils/toast.js';
+import { formatDate, formatTime } from '../../../shared/utils/formatters.js';
+import { exportReporteRestaurantePdf } from '../utils/reportPdf.js';
 
-const StatCard = ({ label, value, sub }) => (
-    <div className='rounded-xl bg-[#16161f] border border-white/[0.06] p-4 space-y-1'>
-        <p className='text-xs font-semibold text-white/40 uppercase tracking-wider'>{label}</p>
-        <p className='text-2xl font-bold text-white'>{value}</p>
-        {sub && <p className='text-xs text-white/30'>{sub}</p>}
-    </div>
-);
+const TABS = [
+    { key: 'ingresos', label: 'Ingresos por día' },
+    { key: 'platos', label: 'Platos más vendidos' },
+    { key: 'horas', label: 'Horas pico' },
+];
 
-const BarChart = ({ data, labelKey, valueKey, formatValue }) => {
-    const max = Math.max(...data.map((d) => d[valueKey]), 1);
-    return (
-        <ul className='space-y-2 list-none p-0 m-0'>
-            {data.map((item, idx) => {
-                const pct = Math.round((item[valueKey] / max) * 100);
-                return (
-                    <li key={idx} className='flex items-center gap-3 text-xs'>
-                        <span className='w-20 shrink-0 text-white/50 truncate text-right'>
-                            {item[labelKey]}
-                        </span>
-                        <div className='flex-1 h-5 rounded-md bg-white/[0.04] overflow-hidden'>
-                            <div
-                                className='h-full rounded-md transition-all duration-500'
-                                style={{
-                                    width: `${pct}%`,
-                                    background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)',
-                                    opacity: 0.7 + (pct / 100) * 0.3,
-                                }}
-                            />
-                        </div>
-                        <span className='w-20 shrink-0 text-white/70 font-semibold'>
-                            {formatValue ? formatValue(item[valueKey]) : item[valueKey]}
-                        </span>
-                    </li>
-                );
-            })}
-        </ul>
-    );
-};
+const COLS_INGRESOS = [
+    { key: 'fecha', label: 'Fecha' },
+    { key: 'ingresos', label: 'Ingresos', align: 'right', className: 'text-white font-semibold', render: (r) => `Q${r.ingresos.toFixed(2)}` },
+    { key: 'cantidadPedidos', label: 'Pedidos', align: 'right' },
+];
 
-const Section = ({ title, children }) => (
-    <div className='rounded-xl bg-[#16161f] border border-white/[0.06] p-5 space-y-4'>
-        <p className='text-xs font-semibold text-white/50 uppercase tracking-wider'>{title}</p>
-        {children}
-    </div>
-);
+const COLS_PLATOS = [
+    { key: 'idx', label: '#', render: (_, i) => <span className='text-white/20'>{i + 1}</span> },
+    { key: 'nombre', label: 'Plato', className: 'text-white/80 font-medium' },
+    { key: 'cantidadVendida', label: 'Vendidos', align: 'right' },
+    { key: 'ingresoGenerado', label: 'Ingresos', align: 'right', className: 'text-white font-semibold', render: (r) => `Q${r.ingresoGenerado.toFixed(2)}` },
+];
+
+const COLS_HORAS = [
+    { key: 'horaFormateada', label: 'Hora', className: 'text-white/70' },
+    { key: 'cantidadPedidos', label: 'Pedidos', align: 'right', className: 'text-white font-semibold' },
+];
 
 export const ReporteRestaurantePage = () => {
     const { reporte, loading, error, fetchReporte, limpiarCache } = useReports();
     const { openConfirm } = useUIStore();
     const [tab, setTab] = useState('ingresos');
+    const [exportando, setExportando] = useState(false);
 
-    useEffect(() => {
-        fetchReporte();
-    }, [fetchReporte]);
-
-    useEffect(() => {
-        if (error) showError(error);
-    }, [error]);
+    useEffect(() => { fetchReporte(); }, [fetchReporte]);
+    useEffect(() => { if (error) showError(error); }, [error]);
 
     const handleLimpiarCache = () =>
         openConfirm({
@@ -70,6 +50,19 @@ export const ReporteRestaurantePage = () => {
             message: 'Se recalculará el reporte desde cero consultando MongoDB. ¿Continuar?',
             onConfirm: limpiarCache,
         });
+
+    const handleExportarPDF = async () => {
+        if (!reporte) return;
+        setExportando(true);
+        try {
+            exportReporteRestaurantePdf(reporte);
+            showSuccess('PDF exportado exitosamente');
+        } catch {
+            showError('Error al exportar el PDF');
+        } finally {
+            setExportando(false);
+        }
+    };
 
     if (loading && !reporte) return <Spinner />;
 
@@ -81,7 +74,7 @@ export const ReporteRestaurantePage = () => {
                     <div className='flex items-center gap-3 mt-1'>
                         <p className='text-sm text-white/50'>
                             {reporte?.fechaCalculo
-                                ? `Calculado el ${new Date(reporte.fechaCalculo).toLocaleString('es-GT')}`
+                                ? `Calculado el ${formatDate(reporte.fechaCalculo)} · ${formatTime(reporte.fechaCalculo)}`
                                 : 'Sin datos aún'}
                         </p>
                         {reporte && <FuenteBadge fuente={reporte.fuente} />}
@@ -95,6 +88,7 @@ export const ReporteRestaurantePage = () => {
                     >
                         {loading ? '...' : 'Forzar recálculo'}
                     </button>
+                    {reporte && <ExportPdfButton onClick={handleExportarPDF} loading={exportando} />}
                 </div>
             </header>
 
@@ -108,147 +102,65 @@ export const ReporteRestaurantePage = () => {
                         <StatCard label='Ingresos totales' value={`Q${reporte.totalIngresos?.toFixed(2)}`} />
                         <StatCard label='Pedidos entregados' value={reporte.totalPedidos} />
                         <StatCard label='Ticket promedio' value={`Q${reporte.promedioTicket?.toFixed(2)}`} />
-                        <StatCard
-                            label='Platos en menú'
-                            value={reporte.platosMasVendidos?.length ?? 0}
-                            sub='con ventas registradas'
-                        />
+                        <StatCard label='Platos en menú' value={reporte.platosMasVendidos?.length ?? 0} sub='con ventas registradas' />
                     </div>
 
                     <div className='flex gap-2 flex-wrap'>
-                        {[
-                            { key: 'ingresos', label: 'Ingresos por día' },
-                            { key: 'platos', label: 'Platos más vendidos' },
-                            { key: 'horas', label: 'Horas pico' },
-                        ].map(({ key, label }) => (
+                        {TABS.map(({ key, label }) => (
                             <button
                                 key={key}
                                 onClick={() => setTab(key)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${tab === key
-                                        ? 'text-white'
+                                        ? 'dbe-btn-primary'
                                         : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
                                     }`}
-                                style={
-                                    tab === key
-                                        ? { background: 'linear-gradient(90deg, #F2509C 0%, #9362D9 100%)' }
-                                        : {}
-                                }
                             >
                                 {label}
                             </button>
                         ))}
                     </div>
 
-                    {tab === 'ingresos' && (
-                        <Section title='Ingresos por día'>
-                            {reporte.ingresosPorDia?.length === 0 ? (
-                                <p className='text-sm text-white/30'>Sin datos.</p>
-                            ) : (
-                                <>
-                                    <BarChart
-                                        data={reporte.ingresosPorDia}
-                                        labelKey='fecha'
-                                        valueKey='ingresos'
-                                        formatValue={(v) => `Q${v.toFixed(2)}`}
-                                    />
-                                    <div className='mt-3 overflow-x-auto'>
-                                        <table className='w-full text-xs text-white/60 border-collapse'>
-                                            <thead>
-                                                <tr className='border-b border-white/[0.06]'>
-                                                    <th className='text-left py-2 text-white/40 font-semibold uppercase tracking-wider'>Fecha</th>
-                                                    <th className='text-right py-2 text-white/40 font-semibold uppercase tracking-wider'>Ingresos</th>
-                                                    <th className='text-right py-2 text-white/40 font-semibold uppercase tracking-wider'>Pedidos</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {reporte.ingresosPorDia.map((row, idx) => (
-                                                    <tr key={idx} className='border-b border-white/[0.03] hover:bg-white/[0.02]'>
-                                                        <td className='py-2'>{row.fecha}</td>
-                                                        <td className='py-2 text-right text-white font-semibold'>Q{row.ingresos.toFixed(2)}</td>
-                                                        <td className='py-2 text-right'>{row.cantidadPedidos}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            )}
-                        </Section>
-                    )}
-
-                    {tab === 'platos' && (
-                        <Section title='Top 10 platos más vendidos'>
-                            {reporte.platosMasVendidos?.length === 0 ? (
-                                <p className='text-sm text-white/30'>Sin datos.</p>
-                            ) : (
-                                <>
-                                    <BarChart
-                                        data={reporte.platosMasVendidos}
-                                        labelKey='nombre'
-                                        valueKey='cantidadVendida'
-                                        formatValue={(v) => `${v} uds`}
-                                    />
-                                    <div className='mt-3 overflow-x-auto'>
-                                        <table className='w-full text-xs text-white/60 border-collapse'>
-                                            <thead>
-                                                <tr className='border-b border-white/[0.06]'>
-                                                    <th className='text-left py-2 text-white/40 font-semibold uppercase tracking-wider'>#</th>
-                                                    <th className='text-left py-2 text-white/40 font-semibold uppercase tracking-wider'>Plato</th>
-                                                    <th className='text-right py-2 text-white/40 font-semibold uppercase tracking-wider'>Vendidos</th>
-                                                    <th className='text-right py-2 text-white/40 font-semibold uppercase tracking-wider'>Ingresos</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {reporte.platosMasVendidos.map((row, idx) => (
-                                                    <tr key={idx} className='border-b border-white/[0.03] hover:bg-white/[0.02]'>
-                                                        <td className='py-2 text-white/20'>{idx + 1}</td>
-                                                        <td className='py-2 text-white/80 font-medium'>{row.nombre}</td>
-                                                        <td className='py-2 text-right'>{row.cantidadVendida}</td>
-                                                        <td className='py-2 text-right text-white font-semibold'>Q{row.ingresoGenerado.toFixed(2)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            )}
-                        </Section>
-                    )}
-
-                    {tab === 'horas' && (
-                        <Section title='Horas pico (hora local Guatemala)'>
-                            {reporte.horasPico?.length === 0 ? (
-                                <p className='text-sm text-white/30'>Sin datos.</p>
-                            ) : (
-                                <>
-                                    <BarChart
-                                        data={reporte.horasPico}
-                                        labelKey='horaFormateada'
-                                        valueKey='cantidadPedidos'
-                                        formatValue={(v) => `${v} pedidos`}
-                                    />
-                                    <div className='mt-3 overflow-x-auto'>
-                                        <table className='w-full text-xs text-white/60 border-collapse'>
-                                            <thead>
-                                                <tr className='border-b border-white/[0.06]'>
-                                                    <th className='text-left py-2 text-white/40 font-semibold uppercase tracking-wider'>Hora</th>
-                                                    <th className='text-right py-2 text-white/40 font-semibold uppercase tracking-wider'>Pedidos</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {reporte.horasPico.map((row, idx) => (
-                                                    <tr key={idx} className='border-b border-white/[0.03] hover:bg-white/[0.02]'>
-                                                        <td className='py-2 text-white/70'>{row.horaFormateada}</td>
-                                                        <td className='py-2 text-right text-white font-semibold'>{row.cantidadPedidos}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            )}
-                        </Section>
-                    )}
+                    <div className='rounded-xl bg-[#16161f] border border-white/[0.06] p-5 space-y-4'>
+                        {tab === 'ingresos' && (
+                            <>
+                                <p className='text-xs font-semibold text-white/50 uppercase tracking-wider'>Ingresos por día</p>
+                                {reporte.ingresosPorDia?.length === 0 ? (
+                                    <p className='text-sm text-white/30'>Sin datos.</p>
+                                ) : (
+                                    <>
+                                        <BarChart data={reporte.ingresosPorDia} labelKey='fecha' valueKey='ingresos' formatValue={(v) => `Q${v.toFixed(2)}`} />
+                                        <ReportTable columns={COLS_INGRESOS} rows={reporte.ingresosPorDia} />
+                                    </>
+                                )}
+                            </>
+                        )}
+                        {tab === 'platos' && (
+                            <>
+                                <p className='text-xs font-semibold text-white/50 uppercase tracking-wider'>Top 10 platos más vendidos</p>
+                                {reporte.platosMasVendidos?.length === 0 ? (
+                                    <p className='text-sm text-white/30'>Sin datos.</p>
+                                ) : (
+                                    <>
+                                        <BarChart data={reporte.platosMasVendidos} labelKey='nombre' valueKey='cantidadVendida' formatValue={(v) => `${v} uds`} />
+                                        <ReportTable columns={COLS_PLATOS} rows={reporte.platosMasVendidos} />
+                                    </>
+                                )}
+                            </>
+                        )}
+                        {tab === 'horas' && (
+                            <>
+                                <p className='text-xs font-semibold text-white/50 uppercase tracking-wider'>Horas pico (hora local Guatemala)</p>
+                                {reporte.horasPico?.length === 0 ? (
+                                    <p className='text-sm text-white/30'>Sin datos.</p>
+                                ) : (
+                                    <>
+                                        <BarChart data={reporte.horasPico} labelKey='horaFormateada' valueKey='cantidadPedidos' formatValue={(v) => `${v} pedidos`} />
+                                        <ReportTable columns={COLS_HORAS} rows={reporte.horasPico} />
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
         </section>
