@@ -152,6 +152,7 @@ export const UserNavbar = ({ onEditProfile, onLogout }) => {
     const location = useLocation();
     const { user } = useAuthStore();
     const { toggleCart, itemCount } = useCart();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const initials = user
         ? `${user.firstName?.[0] ?? ''}${user.surname?.[0] ?? ''}`.toUpperCase()
@@ -162,48 +163,82 @@ export const UserNavbar = ({ onEditProfile, onLogout }) => {
         return location.pathname.startsWith(path);
     };
 
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location.pathname]);
+
     return (
         <nav
-            className="sticky top-0 z-50 flex items-center justify-between px-6"
-            style={{
-                height: 56,
-                background: '#111118',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-            }}
+            className="sticky top-0 z-50"
+            style={{ background: '#111118', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
         >
-            <span
-                className="text-[17px] font-bold"
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate('/home')}
-            >
-                Debuggers<span style={{ color: 'var(--dbe-pink)' }}>Eats</span>
-            </span>
+            {/* Barra principal */}
+            <div className="flex items-center justify-between px-4 md:px-6" style={{ height: 56 }}>
+                <span
+                    className="text-[17px] font-bold cursor-pointer"
+                    onClick={() => navigate('/home')}
+                >
+                    Debuggers<span style={{ color: 'var(--dbe-pink)' }}>Eats</span>
+                </span>
 
-            <div className="flex gap-1">
-                {NAV_ITEMS.map((item) => (
+                {/* Links — solo desktop */}
+                <div className="hidden md:flex gap-1">
+                    {NAV_ITEMS.map((item) => (
+                        <button
+                            key={item.path}
+                            onClick={() => navigate(item.path)}
+                            className="px-3 py-1.5 rounded-lg text-[13px] font-medium border-none cursor-pointer transition-all"
+                            style={{
+                                background: isActive(item.path) ? 'rgba(242,80,156,0.12)' : 'transparent',
+                                color: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.5)',
+                            }}
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <CartButton itemCount={itemCount} onClick={toggleCart} />
+                    <AvatarMenu
+                        initials={initials}
+                        user={user}
+                        onEditProfile={onEditProfile}
+                        onLogout={onLogout}
+                    />
+                    {/* Hamburguesa — solo móvil */}
                     <button
-                        key={item.path}
-                        onClick={() => navigate(item.path)}
-                        className="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border-none cursor-pointer transition-all"
-                        style={{
-                            background: isActive(item.path) ? 'rgba(242,80,156,0.12)' : 'transparent',
-                            color: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.5)',
-                        }}
+                        className="md:hidden p-2 rounded-lg"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
+                        onClick={() => setMobileMenuOpen((p) => !p)}
+                        aria-label="Menú"
                     >
-                        {item.label}
+                        {mobileMenuOpen ? '✕' : '☰'}
                     </button>
-                ))}
+                </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
-                <CartButton itemCount={itemCount} onClick={toggleCart} />
-                <AvatarMenu
-                    initials={initials}
-                    user={user}
-                    onEditProfile={onEditProfile}
-                    onLogout={onLogout}
-                />
-            </div>
+            {/* Menú móvil desplegable */}
+            {mobileMenuOpen && (
+                <div
+                    className="md:hidden flex flex-col px-4 pb-3 gap-1"
+                    style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                    {NAV_ITEMS.map((item) => (
+                        <button
+                            key={item.path}
+                            onClick={() => navigate(item.path)}
+                            className="text-left px-3 py-2.5 rounded-lg text-[13px] font-medium border-none cursor-pointer transition-all"
+                            style={{
+                                background: isActive(item.path) ? 'rgba(242,80,156,0.12)' : 'transparent',
+                                color: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.5)',
+                            }}
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
+            )}
         </nav>
     );
 };
