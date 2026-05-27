@@ -95,7 +95,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
         {/* Número */}
         <div style={{ marginBottom: 16 }}>
           <label className='dbe-label mb-1'>
-            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+            Número / Nombre <span style={{ color: 'var(--dbe-pink)' }}>*</span>
           </label>
           <input
             className='dbe-input w-full px-3 py-2 text-sm'
@@ -112,7 +112,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
         {/* Capacidad */}
         <div style={{ marginBottom: 16 }}>
           <label className='dbe-label mb-1'>
-            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+            Capacidad <span style={{ color: 'var(--dbe-pink)' }}>*</span>
           </label>
           <input
             type='number'
@@ -130,7 +130,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
         {/* Ubicación */}
         <div style={{ marginBottom: 24 }}>
           <label className='dbe-label mb-1'>
-            {text} {req && <span style={{ color: 'var(--dbe-pink)' }}>*</span>}
+            Ubicación
           </label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {LOCATIONS.map((loc) => {
@@ -160,7 +160,17 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
 
         {/* Error */}
         {error && (
-          <p className='dbe-error' style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '8px 12px', margin: '0 0 16px', fontSize: 13 }}>
+          <p
+            className='dbe-error'
+            style={{
+              background: 'rgba(248,113,113,0.08)',
+              border: '1px solid rgba(248,113,113,0.2)',
+              borderRadius: 8,
+              padding: '8px 12px',
+              margin: '0 0 16px',
+              fontSize: 13,
+            }}
+          >
             {error}
           </p>
         )}
