@@ -6,7 +6,7 @@ import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useUIStore } from '../../auth/store/uiStore.js';
 
 export const CartDrawer = () => {
-    const { cart, isOpen, loading, clearCart, closeCart, hasItems } = useCart();
+    const { cart, isOpen, loading, clearCart, closeCart, hasItems, getCart } = useCart();
     const { openConfirm } = useUIStore();
     const [showCheckout, setShowCheckout] = useState(false);
 
@@ -21,6 +21,10 @@ export const CartDrawer = () => {
         document.body.style.overflow = isOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [isOpen]); //desactiva el scroll cuando este abierto el drawer
+
+    useEffect(() => {
+        if (isOpen) getCart();
+    }, [isOpen]);
 
     const handleClearCart = () =>
         openConfirm({

@@ -78,7 +78,7 @@ export const agregarAlCarrito = async (req, res) => {
             return res.status(404).json({ message: 'Platillo o menu no disponible' });
         }
 
-        const carrito = CartService.agregarAlCarrito(userId, item.restaurantId, {
+        const carrito = await CartService.agregarAlCarrito(userId, item.restaurantId, {
             menuItemId: item.id,
             nombre: item.name,
             precio: item.price,
@@ -93,24 +93,28 @@ export const agregarAlCarrito = async (req, res) => {
 };
 
 //ver carrito actual
-export const verCarrito = (req, res) => {
+export const verCarrito = async (req, res) => {
     const { userId } = req.params;
 
     if (userId !== req.user.id) {
         return res.status(403).json({ message: 'No puedes ver el carrito de otro usuario' });
     }
 
-    const carrito = CartService.obtenerCarrito(userId);
+    try {
+        const carrito = await CartService.obtenerCarrito(userId);
 
-    if (!carrito) {
-        return res.json({ message: 'El carrito está vacío', data: null });
+        if (!carrito) {
+            return res.json({ message: 'El carrito está vacío', data: null });
+        }
+
+        res.json({ data: carrito });
+    } catch (err) {
+        res.status(500).json({ message: 'Error al obtener el carrito', err: err.message });
     }
-
-    res.json({ data: carrito });
 };
 
 //cambia la cantidad de un menu en el carrito - si es 0 se elimina el menu automaticamente
-export const actualizarCantidad = (req, res) => {
+export const actualizarCantidad = async (req, res) => {
     const { userId, menuItemId } = req.params;
 
     if (userId !== req.user.id) {
@@ -123,7 +127,7 @@ export const actualizarCantidad = (req, res) => {
         return res.status(400).json({ message: 'Debes enviar una cantidad válida (>= 0)' });
     }
 
-    const carrito = CartService.actualizarCantidad(userId, menuItemId, cantidad);
+    const carrito = await CartService.actualizarCantidad(userId, menuItemId, cantidad);
     if (!carrito) {
         return res.status(404).json({ message: 'Carrito o platillo no encontrado' });
     }
@@ -134,14 +138,14 @@ export const actualizarCantidad = (req, res) => {
 
 
 //se elimina un menu especifico del carrito
-export const eliminarDelCarrito = (req, res) => {
+export const eliminarDelCarrito = async (req, res) => {
     const { userId, menuItemId } = req.params;
 
     if (userId !== req.user.id) {
         return res.status(403).json({ message: 'No puedes modificar el carrito de otro usuario' });
     }
 
-    const carrito = CartService.eliminarDelCarrito(userId, menuItemId);
+    const carrito = await CartService.eliminarDelCarrito(userId, menuItemId);
 
     if (!carrito) {
         return res.status(404).json({ message: 'Carrito o platillo no encontrado' });
@@ -150,14 +154,14 @@ export const eliminarDelCarrito = (req, res) => {
     res.json({ message: 'Platillo eliminado del carrito', data: carrito });
 };
 
-export const vaciarCarrito = (req, res) => {
+export const vaciarCarrito = async (req, res) => {
     const { userId } = req.params;
 
     if (userId !== req.user.id) {
         return res.status(403).json({ message: 'No puedes vaciar el carrito de otro usuario' });
     }
 
-    CartService.vaciarCarrito(userId);
+    await CartService.vaciarCarrito(userId);
     res.json({ message: 'Carrito vaciado exitosamente' });
 };
 
@@ -176,7 +180,7 @@ export const confirmarPedido = async (req, res) => {
     }
 
     //obtener el carrito del usuario
-    const carrito = CartService.obtenerItemsParaOrden(userId);
+    const carrito = await CartService.obtenerItemsParaOrden(userId);
     if (!carrito || carrito.items.length == 0) {
         return res.status(400).json({ message: 'El carrito está vacio. Agrega menus antes de confirmar' });
 
@@ -218,7 +222,7 @@ export const confirmarPedido = async (req, res) => {
 
         await order.save();
 
-        CartService.vaciarCarrito(userId);
+        await CartService.vaciarCarrito(userId);
 
         res.status(201).json({
             message: 'Pedido confirmado exitosamente',
