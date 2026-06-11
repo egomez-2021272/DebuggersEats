@@ -74,6 +74,8 @@ export const ReportePlataformaPage = () => {
                 <div className='space-y-5'>
                     <div className='grid grid-cols-2 xl:grid-cols-3 gap-3'>
                         <StatCard label='Ingresos totales' value={`Q${reportePlataforma.totalIngresosPlataforma?.toFixed(2)}`} />
+                        <StatCard label='Subtotal (sin IVA)' value={`Q${reportePlataforma.totalSubtotalPlataforma?.toFixed(2)}`} />
+                        <StatCard label='IVA (12%)' value={`Q${reportePlataforma.totalIvaPlataforma?.toFixed(2)}`} />
                         <StatCard label='Pedidos entregados' value={reportePlataforma.totalPedidosPlataforma} />
                         <StatCard label='Restaurantes activos' value={reportePlataforma.totalRestaurantes} sub='con al menos 1 pedido entregado' />
                     </div>

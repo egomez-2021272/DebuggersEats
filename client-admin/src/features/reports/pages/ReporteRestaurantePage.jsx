@@ -98,11 +98,15 @@ export const ReporteRestaurantePage = () => {
                 </p>
             ) : (
                 <div className='space-y-5'>
-                    <div className='grid grid-cols-2 xl:grid-cols-4 gap-3'>
+                    <div className='grid grid-cols-2 xl:grid-cols-3 gap-3'>
                         <StatCard label='Ingresos totales' value={`Q${reporte.totalIngresos?.toFixed(2)}`} />
+                        <StatCard label='Subtotal (sin IVA)' value={`Q${reporte.totalSubtotal?.toFixed(2)}`} />
+                        <StatCard label='IVA (12%)' value={`Q${reporte.totalIva?.toFixed(2)}`} />
                         <StatCard label='Pedidos entregados' value={reporte.totalPedidos} />
                         <StatCard label='Ticket promedio' value={`Q${reporte.promedioTicket?.toFixed(2)}`} />
-                        <StatCard label='Platos en menú' value={reporte.platosMasVendidos?.length ?? 0} sub='con ventas registradas' />
+                        <div className='col-span-2 xl:col-span-1'>
+                            <StatCard label='Platos en menú' value={reporte.platosMasVendidos?.length ?? 0} sub='con ventas registradas' />
+                        </div>
                     </div>
 
                     <div className='flex gap-2 flex-wrap'>
@@ -111,8 +115,8 @@ export const ReporteRestaurantePage = () => {
                                 key={key}
                                 onClick={() => setTab(key)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${tab === key
-                                        ? 'dbe-btn-primary'
-                                        : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
+                                    ? 'dbe-btn-primary'
+                                    : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
                                     }`}
                             >
                                 {label}
