@@ -58,6 +58,8 @@ public class ReportServices
         {
             RestaurantId = restaurantId,
             TotalIngresos = orders.Sum(o => o.Total),
+            TotalSubtotal = orders.Sum(o => o.Subtotal),
+            TotalIva = orders.Sum(o => o.Iva),
             TotalPedidos = orders.Count,
             PromedioTicket = orders.Count > 0 ? orders.Average(o => o.Total) : 0,
             FechaCalculo = DateTime.UtcNow,
@@ -141,6 +143,8 @@ public class ReportServices
         var resumen = new ResumenPlataformaDto
         {
             TotalIngresosPlataforma = orders.Sum(o => o.Total),
+            TotalSubtotalPlataforma = orders.Sum(o => o.Subtotal),
+            TotalIvaPlataforma = orders.Sum(o => o.Iva),
             TotalPedidosPlataforma = orders.Count,
             TotalRestaurantes = orders.Select(o => o.RestaurantId).Distinct().Count(),
             FechaCalculo = DateTime.UtcNow,

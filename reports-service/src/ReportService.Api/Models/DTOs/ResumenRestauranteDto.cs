@@ -6,6 +6,8 @@ public class ResumenRestauranteDto
 {
     public string RestaurantId { get; set; } = string.Empty;
     public decimal TotalIngresos { get; set; }
+    public decimal TotalSubtotal { get; set; }
+    public decimal TotalIva { get; set; }
     public int TotalPedidos { get; set; }
     public decimal PromedioTicket { get; set; }
     public List<IngresosPorDiaDto> IngresosPorDia { get; set; } = new();

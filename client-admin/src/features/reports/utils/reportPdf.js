@@ -123,6 +123,8 @@ export const exportReporteRestaurantePdf = (reporte) => {
 
     y = drawKpis(pdf, [
         { label: 'Ingresos totales', value: `Q${reporte.totalIngresos?.toFixed(2)}` },
+        { label: 'Subtotal (sin IVA)', value: `Q${reporte.totalSubtotal?.toFixed(2)}` },
+        { label: 'IVA (12%)', value: `Q${reporte.totalIva?.toFixed(2)}` },
         { label: 'Pedidos entregados', value: reporte.totalPedidos },
         { label: 'Ticket promedio', value: `Q${reporte.promedioTicket?.toFixed(2)}` },
     ], y);
@@ -165,6 +167,8 @@ export const exportReportePlataformaPdf = (reporte) => {
 
     y = drawKpis(pdf, [
         { label: 'Ingresos totales', value: `Q${reporte.totalIngresosPlataforma?.toFixed(2)}` },
+        { label: 'Subtotal (sin IVA)', value: `Q${reporte.totalSubtotalPlataforma?.toFixed(2)}` },
+        { label: 'IVA (12%)', value: `Q${reporte.totalIvaPlataforma?.toFixed(2)}` },
         { label: 'Pedidos entregados', value: reporte.totalPedidosPlataforma },
         { label: 'Restaurantes activos', value: reporte.totalRestaurantes },
     ], y);
