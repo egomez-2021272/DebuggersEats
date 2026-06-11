@@ -1,33 +1,43 @@
-//no se guarda en mongo, es temporal - cuando el user confirma el carrito se convierte en Order
-const carritos = new Map();
+import redis from '../../configs/redis.js';
+
+const CART_TTL = 60 * 60;
+const cartKey = (userId) => `cart:${userId}`;
 
 const calcularSubtotal = (precio, cantidad) =>
     parseFloat((precio * cantidad).toFixed(2));
 
 const calcularTotalesCarrito = (items) => {
-    const subtotal = items.reduce((sum, i) => sum +i.subtotal, 0);
+    const subtotal = items.reduce((sum, i) => sum + i.subtotal, 0);
     const iva = parseFloat((subtotal * 0.12).toFixed(2));
     const total = parseFloat((subtotal + iva).toFixed(2));
-    return { subtotal: parseFloat(subtotal.toFixed(2)), iva, total};
+    return { subtotal: parseFloat(subtotal.toFixed(2)), iva, total };
 };
 
-//se obtiene el carrito de un usuario
-export const obtenerCarrito = (userId) =>{
-    const carrito = carritos.get(userId);
-    if(!carrito) return null;
+const getCarrito = async (userId) => {
+    const data = await redis.get(cartKey(userId));
+    return data ? JSON.parse(data) : null;
+};
+
+const saveCarrito = async (userId, carrito) => {
+    await redis.set(cartKey(userId), JSON.stringify(carrito), 'EX', CART_TTL);
+};
+
+export const obtenerCarrito = async (userId) => {
+    const carrito = await getCarrito(userId);
+    if (!carrito) return null;
 
     const totales = calcularTotalesCarrito(carrito.items);
-    return{
+    return {
         ...carrito,
         ...totales
     };
 };
 
 //se agrega un menu al carrito - solo puede tener menus del mismo rest
-export const agregarAlCarrito = (userId, restaurantId, item) => {
+export const agregarAlCarrito = async (userId, restaurantId, item) => {
     //item = { menuItemId, nombre, precio, cantidad, aditamentos }
 
-    let carrito = carritos.get(userId);
+    let carrito = await getCarrito(userId);
 
     //si el carrito existe pero es de otro restaurante, lo limpiamos
     if (carrito && carrito.restaurantId !== restaurantId.toString()) {
@@ -47,7 +57,7 @@ export const agregarAlCarrito = (userId, restaurantId, item) => {
 
     if (existente) {
         existente.cantidad += item.cantidad;
-        existente.subtotal  = calcularSubtotal(existente.precio, existente.cantidad);
+        existente.subtotal = calcularSubtotal(existente.precio, existente.cantidad);
 
     } else {
 
@@ -61,18 +71,18 @@ export const agregarAlCarrito = (userId, restaurantId, item) => {
         });
     }
 
-    carritos.set(userId, carrito);
+    await saveCarrito(userId, carrito);
     const totales = calcularTotalesCarrito(carrito.items);
     return { ...carrito, ...totales };
 };
 
 
 //cambiaar la cantidad de un platillo en el carro
-export const actualizarCantidad = (userId, menuItemId, nuevaCantidad) =>{
-    const carrito = carritos.get(userId);
-    if(!carrito) return null;
+export const actualizarCantidad = async (userId, menuItemId, nuevaCantidad) => {
+    const carrito = await getCarrito(userId);
+    if (!carrito) return null;
 
-    const idx = carrito.items.findIndex( i=> i.menuItemId == menuItemId.toString());
+    const idx = carrito.items.findIndex(i => i.menuItemId == menuItemId.toString());
     if (idx == -1) return null;
 
     if (nuevaCantidad <= 0) {
@@ -87,20 +97,18 @@ export const actualizarCantidad = (userId, menuItemId, nuevaCantidad) =>{
 
     //si el carrito quedó vacío, eliminarlo
     if (carrito.items.length === 0) {
-        carritos.delete(userId);
+        await redis.del(cartKey(userId));
         return { restaurantId: carrito.restaurantId, items: [], subtotal: 0, iva: 0, total: 0 };
     }
 
-    carritos.set(userId, carrito);
+    await saveCarrito(userId, carrito);
     const totales = calcularTotalesCarrito(carrito.items);
     return { ...carrito, ...totales };
-
-
-}
+};
 
 //eliminar un menu/platillo especifico al carrito por su menuItemId
-export const eliminarDelCarrito = (userId, menuItemId) => {
-    const carrito = carritos.get(userId);
+export const eliminarDelCarrito = async (userId, menuItemId) => {
+    const carrito = await getCarrito(userId);
     if (!carrito) return null;
 
     const antes = carrito.items.length;
@@ -109,23 +117,23 @@ export const eliminarDelCarrito = (userId, menuItemId) => {
     if (carrito.items.length === antes) return null; // n encontró el platillo
 
     if (carrito.items.length === 0) {
-        carritos.delete(userId);
+        await redis.del(cartKey(userId));
         return { restaurantId: carrito.restaurantId, items: [], subtotal: 0, iva: 0, total: 0 };
     }
 
-    carritos.set(userId, carrito);
+    await saveCarrito(userId, carrito);
     const totales = calcularTotalesCarrito(carrito.items);
     return { ...carrito, ...totales };
 };
 
 
-export const vaciarCarrito = (userId) => {
-    carritos.delete(userId);
+export const vaciarCarrito = async (userId) => {
+    await redis.del(cartKey(userId));
 };
 
 
-export const obtenerItemsParaOrden = (userId) => {
-    const carrito = carritos.get(userId);
+export const obtenerItemsParaOrden = async (userId) => {
+    const carrito = await getCarrito(userId);
     if (!carrito || carrito.items.length === 0) return null;
     return carrito;
 };
