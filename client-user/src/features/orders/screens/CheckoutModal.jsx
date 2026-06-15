@@ -1,29 +1,93 @@
 // client-user/src/features/orders/screens/CheckoutModal.jsx
+// Pantalla de confirmación de pedido, equivalente al CheckoutModal de client-admin.
+// Recibe `cart` como parámetro de navegación (pasado desde CartModal).
 
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { useForm } from "react-hook-form";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useForm, Controller } from "react-hook-form";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../../shared/store/authStore";
 import { useOrders } from "../hooks/useOrders";
 import { useCart } from "../hooks/useCart";
-import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from "../../../shared/constants/theme";
-import Button from "../../../shared/components/common/Button";
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZE,
+  BORDER_RADIUS,
+} from "../../../shared/constants/theme";
 import Input from "../../../shared/components/common/Input";
 
 const ADDRESS_TYPES = ["Casa", "Trabajo", "Otro"];
-const PAYMENT_TYPES = ["Tarjeta", "Efectivo"];
+const PAYMENT_TYPES = [
+  { value: "Efectivo", icon: "payments" },
+  { value: "Tarjeta", icon: "credit-card" },
+];
 
+// ── Selector de chips (tipo dirección / pago) ──────────────────────────────
+const ChipSelector = ({ options, selected, onSelect, renderLabel }) => (
+  <View style={styles.chipsRow}>
+    {options.map((opt) => {
+      const value = typeof opt === "string" ? opt : opt.value;
+      const isSelected = selected === value;
+      return (
+        <TouchableOpacity
+          key={value}
+          style={[styles.chip, isSelected && styles.chipSelected]}
+          onPress={() => onSelect(value)}
+          activeOpacity={0.7}
+        >
+          {typeof opt !== "string" && (
+            <MaterialIcons
+              name={opt.icon}
+              size={14}
+              color={isSelected ? "#fff" : COLORS.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+          )}
+          <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+            {renderLabel ? renderLabel(opt) : value}
+          </Text>
+        </TouchableOpacity>
+      );
+    })}
+  </View>
+);
+
+// ── Fila de resumen de ítem ────────────────────────────────────────────────
+const OrderItemRow = ({ item }) => (
+  <View style={styles.orderItemRow}>
+    <View style={{ flex: 1 }}>
+      <Text style={styles.orderItemName}>{item.nombre}</Text>
+      <Text style={styles.orderItemQty}>×{item.cantidad}</Text>
+    </View>
+    <Text style={styles.orderItemPrice}>Q {item.subtotal?.toFixed(2)}</Text>
+  </View>
+);
+
+// ── Pantalla principal ─────────────────────────────────────────────────────
 const CheckoutModal = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { cart } = route.params || {};
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((s) => s.user);
   const { confirmOrder, loading } = useOrders();
   const { clearCart } = useCart();
-  const [selectedAddressType, setSelectedAddressType] = useState("Casa");
-  const [selectedPaymentType, setSelectedPaymentType] = useState("Tarjeta");
+
+  const [addressType, setAddressType] = useState("Casa");
+  const [paymentType, setPaymentType] = useState("Efectivo");
 
   const {
     control,
@@ -39,217 +103,276 @@ const CheckoutModal = () => {
   });
 
   const onSubmit = async (data) => {
-    if (!cart || cart.items?.length === 0) {
+    if (!cart || !cart.items?.length) {
       Alert.alert("Error", "El carrito está vacío");
       return;
     }
 
-    try {
-      const orderBody = {
-        restaurantId: cart.items[0]?.restaurantId,
-        userId: user._id,
-        items: cart.items,
-        direccion: {
-          tipo: selectedAddressType,
-          descripcion: data.descripcion,
-          referencias: data.referencias,
-        },
-        telefono: data.telefono,
-        tipoPago: selectedPaymentType,
-        notas: data.notas,
-      };
+    const orderBody = {
+      restaurantId: cart.items[0]?.restaurantId,
+      userId: user._id,
+      items: cart.items,
+      direccion: {
+        tipo: addressType,
+        descripcion: data.descripcion,
+        referencias: data.referencias || "",
+      },
+      telefono: data.telefono,
+      tipoPago: paymentType,
+      notas: data.notas || "",
+    };
 
+    try {
       await confirmOrder(orderBody);
-      await clearCart(user._id);
+      await clearCart();
 
       Alert.alert(
-        "¡Pedido realizado!",
-        "Tu pedido ha sido confirmado. Recibirás una actualización pronto.",
+        "¡Pedido realizado! 🎉",
+        "Tu pedido fue confirmado. Recibirás una actualización pronto.",
         [
           {
-            text: "OK",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Pedidos" }],
-              });
-            },
+            text: "Ver mis pedidos",
+            onPress: () =>
+              navigation.reset({ index: 0, routes: [{ name: "Pedidos" }] }),
           },
         ]
       );
     } catch (err) {
-      Alert.alert("Error", "No se pudo realizar el pedido");
+      Alert.alert(
+        "Error al confirmar",
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "No se pudo realizar el pedido. Intenta de nuevo."
+      );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Confirmar pedido</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <MaterialIcons name="close" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Dirección de entrega</Text>
-
-          <View style={styles.chipsContainer}>
-            {ADDRESS_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.chip, selectedAddressType === type && styles.chipSelected]}
-                onPress={() => setSelectedAddressType(type)}
-              >
-                <Text style={[styles.chipText, selectedAddressType === type && styles.chipTextSelected]}>
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View
+        style={[styles.container, { paddingTop: insets.top }]}
+      >
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+          >
+            <MaterialIcons name="arrow-back" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+            <Text style={styles.headerTitle}>Confirmar pedido</Text>
+            {cart?.total != null && (
+              <Text style={styles.headerSubtitle}>
+                Total: Q {cart.total?.toFixed(2)}
+              </Text>
+            )}
           </View>
+        </View>
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + SPACING.xl },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Dirección ── */}
+          <Text style={styles.sectionTitle}>Dirección de entrega</Text>
+          <Text style={styles.fieldLabel}>Tipo de dirección</Text>
+          <ChipSelector
+            options={ADDRESS_TYPES}
+            selected={addressType}
+            onSelect={setAddressType}
+          />
 
           <Input
-            label="Descripción de dirección"
+            label="Descripción *"
             control={control}
             name="descripcion"
-            rules={{ required: "La dirección es requerida" }}
+            rules={{ required: "La dirección es requerida", minLength: { value: 5, message: "Mínimo 5 caracteres" } }}
             error={errors.descripcion?.message}
-            placeholder="Calle, número, colonia..."
+            placeholder="Zona 1, Calle Principal 5-20, Apto. 3"
           />
 
           <Input
             label="Referencias (opcional)"
             control={control}
             name="referencias"
-            placeholder="Puntos de referencia..."
+            placeholder="Casa color azul, frente al parque..."
           />
 
-          <Text style={styles.sectionTitle}>Información de contacto</Text>
-
+          {/* ── Contacto ── */}
+          <Text style={styles.sectionTitle}>Contacto</Text>
           <Input
-            label="Teléfono"
+            label="Teléfono *"
             control={control}
             name="telefono"
-            rules={{ required: "El teléfono es requerido" }}
+            rules={{
+              required: "El teléfono es requerido",
+              pattern: { value: /^\d{8,15}$/, message: "8–15 dígitos" },
+            }}
             error={errors.telefono?.message}
-            placeholder="+52 123 456 7890"
+            placeholder="42459699"
             keyboardType="phone-pad"
           />
 
-          <Text style={styles.sectionTitle}>Tipo de pago</Text>
+          {/* ── Método de pago ── */}
+          <Text style={styles.sectionTitle}>Método de pago</Text>
+          <ChipSelector
+            options={PAYMENT_TYPES}
+            selected={paymentType}
+            onSelect={setPaymentType}
+            renderLabel={(opt) =>
+              opt.value === "Tarjeta" ? "Tarjeta" : "Efectivo"
+            }
+          />
 
-          <View style={styles.chipsContainer}>
-            {PAYMENT_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.chip, selectedPaymentType === type && styles.chipSelected]}
-                onPress={() => setSelectedPaymentType(type)}
-              >
-                <Text style={[styles.chipText, selectedPaymentType === type && styles.chipTextSelected]}>
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
+          {/* ── Notas ── */}
+          <Text style={styles.sectionTitle}>Notas para el restaurante</Text>
           <Input
-            label="Notas adicionales (opcional)"
+            label="Notas (opcional)"
             control={control}
             name="notas"
-            placeholder="Instrucciones especiales..."
+            placeholder="Sin picante, entregar en recepción..."
             multiline
             numberOfLines={3}
           />
 
-          {cart && cart.items && cart.items.length > 0 && (
-            <View style={styles.summary}>
-              <Text style={styles.summaryTitle}>Tu pedido</Text>
-              {cart.items.map((item, index) => (
-                <View key={index} style={styles.cartItem}>
-                  <View style={styles.cartItemInfo}>
-                    <Text style={styles.cartItemName}>{item.nombre}</Text>
-                    <Text style={styles.cartItemQuantity}>x{item.cantidad}</Text>
-                  </View>
-                  <Text style={styles.cartItemPrice}>Q {item.subtotal}</Text>
-                </View>
-              ))}
-              <View style={styles.summaryDivider} />
+          {/* ── Resumen del pedido ── */}
+          {cart?.items?.length > 0 && (
+            <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Resumen del pedido</Text>
+
+              {cart.items.map((item, i) => (
+                <OrderItemRow key={i} item={item} />
+              ))}
+
+              <View style={styles.divider} />
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>Q {cart.subtotal}</Text>
+                <Text style={styles.summaryValue}>
+                  Q {cart.subtotal?.toFixed(2)}
+                </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>IVA (12%)</Text>
-                <Text style={styles.summaryValue}>Q {cart.iva}</Text>
+                <Text style={styles.summaryValue}>Q {cart.iva?.toFixed(2)}</Text>
               </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>Q {cart.total}</Text>
+              <View style={[styles.summaryRow, styles.grandTotalRow]}>
+                <Text style={styles.grandLabel}>Total</Text>
+                <Text style={styles.grandValue}>Q {cart.total?.toFixed(2)}</Text>
               </View>
             </View>
           )}
 
-          <Button
-            title="Confirmar pedido"
+          {/* ── CTA ── */}
+          <TouchableOpacity
+            style={[styles.confirmBtn, loading && styles.confirmBtnDisabled]}
             onPress={handleSubmit(onSubmit)}
-            loading={loading}
-            style={styles.submitButton}
-          />
-        </View>
-      </ScrollView>
-    </View>
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <MaterialIcons
+                  name="check-circle"
+                  size={18}
+                  color="#fff"
+                  style={{ marginRight: SPACING.sm }}
+                />
+                <Text style={styles.confirmBtnText}>Confirmar pedido</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => navigation.goBack()}
+            disabled={loading}
+          >
+            <Text style={styles.cancelBtnText}>Cancelar</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+
+  // Header
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.surface,
   },
-  title: {
+  backBtn: {
+    padding: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  headerTitle: {
     color: COLORS.text,
     fontSize: FONT_SIZE.lg,
     fontWeight: "700",
   },
-  closeButton: {
-    padding: SPACING.xs,
+  headerSubtitle: {
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: "600",
+    marginTop: 2,
   },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: SPACING.xl,
-  },
+
+  // Scroll
+  scroll: { flex: 1 },
+  scrollContent: { padding: SPACING.md, gap: SPACING.xs },
+
+  // Secciones
   sectionTitle: {
     color: COLORS.text,
     fontSize: FONT_SIZE.md,
-    fontWeight: "600",
-    marginBottom: SPACING.md,
+    fontWeight: "700",
     marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
-  chipsContainer: {
+  fieldLabel: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: SPACING.sm,
+  },
+
+  // Chips
+  chipsRow: {
     flexDirection: "row",
+    gap: SPACING.sm,
     marginBottom: SPACING.md,
+    flexWrap: "wrap",
   },
   chip: {
-    backgroundColor: COLORS.surface,
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
-    marginRight: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceAlt,
   },
   chipSelected: {
     backgroundColor: COLORS.primary,
@@ -260,46 +383,45 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     fontWeight: "500",
   },
-  chipTextSelected: {
-    color: COLORS.text,
-  },
-  summary: {
+  chipTextSelected: { color: "#fff" },
+
+  // Resumen
+  summaryCard: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     marginTop: SPACING.lg,
-    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   summaryTitle: {
     color: COLORS.text,
     fontSize: FONT_SIZE.md,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: SPACING.md,
   },
-  cartItem: {
+  orderItemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: SPACING.sm,
   },
-  cartItemInfo: {
-    flex: 1,
-  },
-  cartItemName: {
+  orderItemName: {
     color: COLORS.text,
     fontSize: FONT_SIZE.sm,
     fontWeight: "600",
   },
-  cartItemQuantity: {
-    color: COLORS.textSecondary,
+  orderItemQty: {
+    color: COLORS.textMuted,
     fontSize: FONT_SIZE.xs,
+    marginTop: 2,
   },
-  cartItemPrice: {
+  orderItemPrice: {
     color: COLORS.primary,
     fontSize: FONT_SIZE.sm,
     fontWeight: "700",
   },
-  summaryDivider: {
+  divider: {
     height: 1,
     backgroundColor: COLORS.border,
     marginVertical: SPACING.md,
@@ -307,37 +429,51 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
-  summaryLabel: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
-  },
-  summaryValue: {
-    color: COLORS.text,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: "500",
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
+  summaryLabel: { color: COLORS.textSecondary, fontSize: FONT_SIZE.sm },
+  summaryValue: { color: COLORS.text, fontSize: FONT_SIZE.sm },
+  grandTotalRow: {
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
-  totalLabel: {
+  grandLabel: {
     color: COLORS.text,
+    fontSize: FONT_SIZE.md,
+    fontWeight: "700",
+  },
+  grandValue: {
+    color: COLORS.primary,
     fontSize: FONT_SIZE.lg,
     fontWeight: "700",
   },
-  totalValue: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.xl,
+
+  // CTA
+  confirmBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.xl,
+  },
+  confirmBtnDisabled: { opacity: 0.6 },
+  confirmBtnText: {
+    color: "#fff",
+    fontSize: FONT_SIZE.md,
     fontWeight: "700",
   },
-  submitButton: {
-    marginBottom: SPACING.xl,
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.sm,
+  },
+  cancelBtnText: {
+    color: COLORS.textMuted,
+    fontSize: FONT_SIZE.sm,
   },
 });
 

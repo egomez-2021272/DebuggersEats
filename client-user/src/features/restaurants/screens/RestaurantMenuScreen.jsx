@@ -1,20 +1,36 @@
 // client-user/src/features/restaurants/screens/RestaurantMenuScreen.jsx
+// Cambios principales:
+//  1. Usa useCart() del store global → cartCount reactivo y addToCart abre el modal.
+//  2. Reemplaza Alert.alert("Agregado") por apertura del CartModal.
+//  3. Corrige el Safe Area: las categorías respetan el inset superior.
 
 import React, { useState, useCallback, useEffect } from "react";
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Image, FlatList, Alert,
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  Alert,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import restaurantClient from "../../../shared/api/restaurantClient";
 import { useCart } from "../../orders/hooks/useCart";
-import { useAuthStore } from "../../../shared/store/authStore";
-import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from "../../../shared/constants/theme";
+import CartModal from "../../orders/screens/CartModal";
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZE,
+  BORDER_RADIUS,
+  SHADOWS,
+} from "../../../shared/constants/theme";
 import { Card, EmptyState } from "../../../shared/components/common/Common";
 import Button from "../../../shared/components/common/Button";
 
-// FIX: categorías reales que usa el backend
 const MENU_CATEGORIES = [
   { value: "ALL", label: "Todos" },
   { value: "DESAYUNO", label: "Desayuno" },
@@ -28,8 +44,14 @@ const CategoryChip = ({ label, selected, onPress }) => (
   <TouchableOpacity
     onPress={onPress}
     style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+    activeOpacity={0.7}
   >
-    <Text style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}>
+    <Text
+      style={[
+        styles.categoryChipText,
+        selected && styles.categoryChipTextSelected,
+      ]}
+    >
       {label}
     </Text>
   </TouchableOpacity>
@@ -41,7 +63,11 @@ const MenuItemCard = ({ item, onAddToCart, adding }) => (
       <Image source={{ uri: item.photo }} style={styles.menuItemImage} />
     ) : (
       <View style={[styles.menuItemImage, styles.menuItemImagePlaceholder]}>
-        <MaterialIcons name="restaurant-menu" size={40} color={COLORS.textMuted} />
+        <MaterialIcons
+          name="restaurant-menu"
+          size={40}
+          color={COLORS.textMuted}
+        />
       </View>
     )}
     <View style={styles.menuItemContent}>
@@ -76,36 +102,43 @@ const MenuItemCard = ({ item, onAddToCart, adding }) => (
 const RestaurantMenuScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { restaurantId } = route.params;
-  const user = useAuthStore((state) => state.user);
-  const { addToCart, cartCount } = useCart();
+
+  const { addToCart, cartCount, openCart } = useCart();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [menu, setMenu] = useState([]);
   const [restaurantName, setRestaurantName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [addingItem, setAddingItem] = useState(null); // id del item que se está agregando
+  const [addingItem, setAddingItem] = useState(null);
 
   const fetchMenu = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      // Usamos el endpoint de menú del restaurante (no el de orders/menu que es para el carrito)
-      const response = await restaurantClient.get(`/menu/restaurant/${restaurantId}`);
+      const response = await restaurantClient.get(
+        `/menu/restaurant/${restaurantId}`
+      );
       const data = response.data.data || response.data;
       setMenu(Array.isArray(data) ? data : []);
 
-      // También traemos el nombre del restaurante
       try {
-        const restResponse = await restaurantClient.get(`/restaurants/${restaurantId}`);
-        const restData = restResponse.data.data || restResponse.data;
+        const restRes = await restaurantClient.get(
+          `/restaurants/${restaurantId}`
+        );
+        const restData = restRes.data.data || restRes.data;
         setRestaurantName(restData.name || "Menú");
       } catch {
-        // No crítico
+        // no crítico
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || "Error al cargar menú");
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Error al cargar menú"
+      );
     } finally {
       setLoading(false);
     }
@@ -116,26 +149,20 @@ const RestaurantMenuScreen = () => {
   }, [fetchMenu]);
 
   const handleAddToCart = async (item) => {
-    if (!user?._id) {
-      Alert.alert("Error", "Debes iniciar sesión para agregar al carrito");
-      return;
-    }
     if (!item.available) {
-      Alert.alert("No disponible", "Este platillo no está disponible en este momento");
+      Alert.alert(
+        "No disponible",
+        "Este platillo no está disponible en este momento"
+      );
       return;
     }
-
     try {
       setAddingItem(item._id);
-      // FIX: firma correcta addToCart(userId, menuItemId, cantidad, aditamentos)
-      await addToCart(user._id, item._id, 1, []);
-      Alert.alert("✓ Agregado", `${item.name} se agregó al carrito`);
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "No se pudo agregar al carrito";
-      Alert.alert("Error", msg);
+      const result = await addToCart(item._id, 1, []);
+      if (!result.ok) {
+        Alert.alert("Error", result.message || "No se pudo agregar al carrito");
+      }
+      // Si ok: el store abre el CartModal automáticamente (isCartOpen = true)
     } finally {
       setAddingItem(null);
     }
@@ -146,6 +173,7 @@ const RestaurantMenuScreen = () => {
       ? menu
       : menu.filter((item) => item.category === selectedCategory);
 
+  // Header con botón del carrito
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: restaurantName || "Menú",
@@ -154,8 +182,9 @@ const RestaurantMenuScreen = () => {
       headerTitleStyle: { fontWeight: "600" },
       headerRight: () => (
         <TouchableOpacity
-          onPress={() => navigation.navigate("Cart")}
-          style={styles.cartButton}
+          onPress={openCart}
+          style={styles.cartHeaderBtn}
+          activeOpacity={0.7}
         >
           <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
           {cartCount > 0 && (
@@ -166,7 +195,7 @@ const RestaurantMenuScreen = () => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, restaurantName, cartCount]);
+  }, [navigation, restaurantName, cartCount, openCart]);
 
   if (loading) {
     return (
@@ -186,8 +215,21 @@ const RestaurantMenuScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.categoriesContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {/* ── Selector de categorías con Safe Area corregida ── */}
+      <View
+        style={[
+          styles.categoriesContainer,
+          // paddingTop extra si el header no absorbe el inset (headerShown:false)
+          // Con headerShown:true (este stack sí lo muestra) el inset ya está cubierto,
+          // pero dejamos un mínimo para que no quede pegado al borde del header.
+          { paddingTop: SPACING.sm },
+        ]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
           {MENU_CATEGORIES.map((cat) => (
             <CategoryChip
               key={cat.value}
@@ -199,6 +241,7 @@ const RestaurantMenuScreen = () => {
         </ScrollView>
       </View>
 
+      {/* ── Lista de platillos ── */}
       <FlatList
         data={filteredMenu}
         keyExtractor={(item) => item._id}
@@ -209,7 +252,10 @@ const RestaurantMenuScreen = () => {
             adding={addingItem === item._id}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: insets.bottom + SPACING.xl },
+        ]}
         ListEmptyComponent={
           <EmptyState
             icon="restaurant-menu"
@@ -222,54 +268,111 @@ const RestaurantMenuScreen = () => {
           />
         }
       />
+
+      {/* ── Cart Modal (bottom sheet global) ── */}
+      <CartModal />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  centered: { flex: 1, backgroundColor: COLORS.background, justifyContent: "center", alignItems: "center" },
+  centered: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   loadingText: { color: COLORS.text, fontSize: FONT_SIZE.md },
+
+  // Categorías
   categoriesContainer: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    paddingBottom: SPACING.sm,
+  },
+  categoriesContent: {
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+    alignItems: "center",
   },
   categoryChip: {
     backgroundColor: COLORS.background,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
-    marginRight: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  categoryChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryChipText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, fontWeight: "500" },
-  categoryChipTextSelected: { color: COLORS.white || "#fff" },
-  listContent: { padding: SPACING.xl },
+  categoryChipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryChipText: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: "500",
+  },
+  categoryChipTextSelected: { color: "#fff" },
+
+  // Lista
+  listContent: { padding: SPACING.md },
   menuItemCard: { marginBottom: SPACING.md, overflow: "hidden" },
   menuItemImage: { width: "100%", height: 150, resizeMode: "cover" },
   menuItemImagePlaceholder: {
-    backgroundColor: COLORS.surfaceAlt, justifyContent: "center", alignItems: "center",
+    backgroundColor: COLORS.surfaceAlt,
+    justifyContent: "center",
+    alignItems: "center",
   },
   menuItemContent: { padding: SPACING.md },
-  menuItemName: { color: COLORS.text, fontSize: FONT_SIZE.lg, fontWeight: "600", marginBottom: SPACING.xs },
-  menuItemDescription: {
-    color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, marginBottom: SPACING.xs, lineHeight: 18,
+  menuItemName: {
+    color: COLORS.text,
+    fontSize: FONT_SIZE.lg,
+    fontWeight: "600",
+    marginBottom: SPACING.xs,
   },
-  menuItemIngredients: { color: COLORS.textMuted, fontSize: FONT_SIZE.xs, marginBottom: SPACING.sm },
-  menuItemFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: SPACING.sm },
-  menuItemPrice: { color: COLORS.primary, fontSize: FONT_SIZE.xl, fontWeight: "700" },
+  menuItemDescription: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.sm,
+    marginBottom: SPACING.xs,
+    lineHeight: 18,
+  },
+  menuItemIngredients: {
+    color: COLORS.textMuted,
+    fontSize: FONT_SIZE.xs,
+    marginBottom: SPACING.sm,
+  },
+  menuItemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: SPACING.sm,
+  },
+  menuItemPrice: {
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.xl,
+    fontWeight: "700",
+  },
   addButton: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },
-  unavailableText: { color: COLORS.error, fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
-  cartButton: { marginRight: SPACING.md, position: "relative" },
+  unavailableText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.xs,
+    marginTop: SPACING.xs,
+  },
+
+  // Header cart button
+  cartHeaderBtn: { marginRight: SPACING.md, position: "relative" },
   cartBadge: {
-    position: "absolute", top: -6, right: -6,
-    backgroundColor: COLORS.error, borderRadius: 9, width: 18, height: 18,
-    justifyContent: "center", alignItems: "center",
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.error,
+    borderRadius: 9,
+    width: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
   },
   cartBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
 });
