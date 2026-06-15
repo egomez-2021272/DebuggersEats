@@ -1,112 +1,128 @@
 // client-user/src/features/orders/screens/CartScreen.jsx
+// Vista de carrito en pantalla completa (accesible desde el header o navegación directa).
+// El flujo principal ahora usa CartModal, pero esta pantalla sirve como alternativa.
 
-import React, { useCallback, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useAuthStore } from "../../../shared/store/authStore";
 import { useCart } from "../hooks/useCart";
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from "../../../shared/constants/theme";
 import { Card, EmptyState } from "../../../shared/components/common/Common";
 import Button from "../../../shared/components/common/Button";
 
-const CartItem = ({ item, onUpdateQuantity, onRemove }) => (
+const CartItem = ({ item, onIncrease, onDecrease, onRemove }) => (
   <Card style={styles.cartItem}>
     {item.photo ? (
       <Image source={{ uri: item.photo }} style={styles.itemImage} />
     ) : (
       <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
-        <MaterialIcons name="restaurant-menu" size={32} color={COLORS.textMuted} />
+        <MaterialIcons name="restaurant-menu" size={28} color={COLORS.textMuted} />
       </View>
     )}
     <View style={styles.itemContent}>
       <Text style={styles.itemName}>{item.nombre}</Text>
-      <Text style={styles.itemPrice}>Q {item.precio}</Text>
+      <Text style={styles.itemPrice}>Q {item.precio?.toFixed(2)} c/u</Text>
+
       <View style={styles.quantityControls}>
-        <TouchableOpacity
-          style={styles.quantityButton}
-          onPress={() => onUpdateQuantity(item.menuItemId, item.cantidad - 1)}
-        >
-          <MaterialIcons name="remove" size={18} color={COLORS.text} />
+        <TouchableOpacity style={styles.quantityButton} onPress={onDecrease}>
+          <MaterialIcons
+            name={item.cantidad === 1 ? "delete" : "remove"}
+            size={16}
+            color={item.cantidad === 1 ? COLORS.error : COLORS.text}
+          />
         </TouchableOpacity>
         <Text style={styles.quantityText}>{item.cantidad}</Text>
-        <TouchableOpacity
-          style={styles.quantityButton}
-          onPress={() => onUpdateQuantity(item.menuItemId, item.cantidad + 1)}
-        >
-          <MaterialIcons name="add" size={18} color={COLORS.text} />
+        <TouchableOpacity style={styles.quantityButton} onPress={onIncrease}>
+          <MaterialIcons name="add" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.itemSubtotal}>Subtotal: Q {item.subtotal}</Text>
-      <TouchableOpacity style={styles.removeButton} onPress={() => onRemove(item.menuItemId)}>
-        <MaterialIcons name="delete" size={18} color={COLORS.error} />
-        <Text style={styles.removeButtonText}>Eliminar</Text>
-      </TouchableOpacity>
+
+      <View style={styles.itemFooter}>
+        <Text style={styles.itemSubtotal}>
+          Subtotal: Q {item.subtotal?.toFixed(2)}
+        </Text>
+        <TouchableOpacity onPress={onRemove}>
+          <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
+        </TouchableOpacity>
+      </View>
     </View>
   </Card>
 );
 
 const CartScreen = () => {
   const navigation = useNavigation();
-  const user = useAuthStore((state) => state.user);
-  const { cart, cartCount, loading, error, fetchCart, updateCartItem, removeCartItem } = useCart();
+  const insets = useSafeAreaInsets();
+  const {
+    cart,
+    cartCount,
+    loading,
+    hasItems,
+    fetchCart,
+    updateCartItem,
+    removeCartItem,
+    clearCart,
+  } = useCart();
 
   useEffect(() => {
-    if (user?._id) {
-      fetchCart(user._id);
-    }
-  }, [user, fetchCart]);
+    fetchCart();
+  }, []);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: `Carrito (${cartCount})`,
+      headerStyle: { backgroundColor: COLORS.surface },
+      headerTintColor: COLORS.text,
     });
   }, [navigation, cartCount]);
 
-  const handleUpdateQuantity = async (menuItemId, cantidad) => {
-    if (cantidad < 1) {
-      Alert.alert("Cantidad mínima", "La cantidad mínima es 1");
-      return;
-    }
-    try {
-      await updateCartItem(user._id, menuItemId, cantidad);
-    } catch (err) {
-      Alert.alert("Error", "No se pudo actualizar la cantidad");
-    }
-  };
-
-  const handleRemove = async (menuItemId) => {
-    Alert.alert(
-      "Eliminar ítem",
-      "¿Estás seguro de que deseas eliminar este ítem del carrito?",
-      [
-        { text: "No", style: "cancel" },
+  const handleDecrease = (item) => {
+    if (item.cantidad <= 1) {
+      Alert.alert("Eliminar ítem", `¿Quitar "${item.nombre}" del carrito?`, [
+        { text: "Cancelar", style: "cancel" },
         {
-          text: "Sí, eliminar",
+          text: "Eliminar",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await removeCartItem(user._id, menuItemId);
-            } catch (err) {
-              Alert.alert("Error", "No se pudo eliminar el ítem");
-            }
-          },
+          onPress: () => removeCartItem(item.menuItemId),
         },
-      ]
+      ]);
+    } else {
+      updateCartItem(item.menuItemId, item.cantidad - 1);
+    }
+  };
+
+  const handleClearCart = () => {
+    Alert.alert("Vaciar carrito", "¿Eliminar todos los platillos?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Vaciar", style: "destructive", onPress: clearCart },
+    ]);
+  };
+
+  if (loading && !hasItems) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={COLORS.primary} size="large" />
+      </View>
     );
-  };
+  }
 
-  const handleCheckout = () => {
-    navigation.navigate("CheckoutModal", { cart });
-  };
-
-  if (cart.items?.length === 0) {
+  if (!hasItems) {
     return (
       <View style={styles.container}>
         <EmptyState
           icon="shopping-cart"
           title="Carrito vacío"
-          subtitle="Agrega items del menú para comenzar"
+          subtitle="Agrega platillos del menú para comenzar"
         />
       </View>
     );
@@ -114,37 +130,47 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {cart.items.map((item, index) => (
-            <CartItem
-              key={index}
-              item={item}
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemove={handleRemove}
-            />
-          ))}
-        </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ padding: SPACING.md, paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {cart.items.map((item, index) => (
+          <CartItem
+            key={item.menuItemId || index}
+            item={item}
+            onIncrease={() => updateCartItem(item.menuItemId, item.cantidad + 1)}
+            onDecrease={() => handleDecrease(item)}
+            onRemove={() => removeCartItem(item.menuItemId)}
+          />
+        ))}
+
+        <TouchableOpacity onPress={handleClearCart} style={styles.clearBtn}>
+          <Text style={styles.clearBtnText}>Vaciar carrito</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Card style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>Q {cart.subtotal}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>IVA (12%)</Text>
-            <Text style={styles.summaryValue}>Q {cart.iva}</Text>
+      {/* Footer fijo con totales */}
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}
+      >
+        <View style={styles.totalsBlock}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal</Text>
+            <Text style={styles.totalValue}>Q {cart.subtotal?.toFixed(2)}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>Q {cart.total}</Text>
+            <Text style={styles.totalLabel}>IVA (12%)</Text>
+            <Text style={styles.totalValue}>Q {cart.iva?.toFixed(2)}</Text>
           </View>
-        </Card>
+          <View style={[styles.totalRow, styles.grandRow]}>
+            <Text style={styles.grandLabel}>Total</Text>
+            <Text style={styles.grandValue}>Q {cart.total?.toFixed(2)}</Text>
+          </View>
+        </View>
         <Button
           title="Proceder al pago"
-          onPress={handleCheckout}
+          onPress={() => navigation.navigate("CheckoutModal", { cart })}
           style={styles.checkoutButton}
         />
       </View>
@@ -153,16 +179,9 @@ const CartScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: SPACING.xl,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.background },
+  scrollView: { flex: 1 },
   cartItem: {
     flexDirection: "row",
     marginBottom: SPACING.md,
@@ -181,7 +200,6 @@ const styles = StyleSheet.create({
   itemContent: {
     flex: 1,
     padding: SPACING.md,
-    marginLeft: SPACING.md,
   },
   itemName: {
     color: COLORS.text,
@@ -200,10 +218,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   quantityButton: {
-    backgroundColor: COLORS.surface,
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.surfaceAlt,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
@@ -212,68 +230,55 @@ const styles = StyleSheet.create({
   quantityText: {
     color: COLORS.text,
     fontSize: FONT_SIZE.md,
-    fontWeight: "600",
+    fontWeight: "700",
     marginHorizontal: SPACING.md,
+    minWidth: 20,
+    textAlign: "center",
+  },
+  itemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   itemSubtotal: {
     color: COLORS.primary,
     fontSize: FONT_SIZE.sm,
     fontWeight: "600",
-    marginBottom: SPACING.sm,
   },
-  removeButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  clearBtn: {
+    alignSelf: "center",
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
-  removeButtonText: {
-    color: COLORS.error,
+  clearBtnText: {
+    color: COLORS.textMuted,
     fontSize: FONT_SIZE.xs,
-    marginLeft: SPACING.xs,
   },
   footer: {
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    padding: SPACING.xl,
+    padding: SPACING.md,
+    paddingTop: SPACING.lg,
+    ...SHADOWS.md,
   },
-  summaryCard: {
-    marginBottom: SPACING.md,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: SPACING.sm,
-  },
-  summaryLabel: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
-  },
-  summaryValue: {
-    color: COLORS.text,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: "500",
-  },
+  totalsBlock: { marginBottom: SPACING.md },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
+    marginBottom: SPACING.xs,
+  },
+  totalLabel: { color: COLORS.textSecondary, fontSize: FONT_SIZE.sm },
+  totalValue: { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: "500" },
+  grandRow: {
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
-  totalLabel: {
-    color: COLORS.text,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: "700",
-  },
-  totalValue: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.xl,
-    fontWeight: "700",
-  },
-  checkoutButton: {
-    marginBottom: SPACING.xs,
-  },
+  grandLabel: { color: COLORS.text, fontSize: FONT_SIZE.md, fontWeight: "700" },
+  grandValue: { color: COLORS.primary, fontSize: FONT_SIZE.lg, fontWeight: "700" },
+  checkoutButton: { marginBottom: 0 },
 });
 
 export default CartScreen;

@@ -1,120 +1,82 @@
 // client-user/src/features/orders/hooks/useCart.js
+// Hook delgado que conecta el cartStore con el userId del authStore.
+// El patrón es idéntico al de client-admin: el hook resuelve el userId
+// y delega al store, evitando que cada screen tenga que pasarlo manualmente.
 
-import { useState, useCallback } from "react";
-import restaurantClient from "../../../shared/api/restaurantClient";
+import { useCallback } from "react";
+import { useCartStore } from "../store/cartStore";
+import { useAuthStore } from "../../../shared/store/authStore";
 
 export const useCart = () => {
-  const [cart, setCart] = useState({ items: [], subtotal: 0, iva: 0, total: 0 });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const userId = useAuthStore((s) => s.user?._id || s.user?.id);
 
-  const fetchCart = useCallback(async (userId) => {
-    if (!userId) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await restaurantClient.get(`/orders/cart/${userId}`);
-      // El backend puede devolver null cuando el carrito está vacío — eso no es error
-      const data = response.data.data ?? { items: [], subtotal: 0, iva: 0, total: 0 };
-      setCart(data);
-    } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || "Error al cargar carrito");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    cart,
+    isCartOpen,
+    loading,
+    error,
+    openCart,
+    closeCart,
+    toggleCart,
+    fetchCart: fetchCartRaw,
+    addToCart: addToCartRaw,
+    updateCartItem: updateCartItemRaw,
+    removeCartItem: removeCartItemRaw,
+    clearCart: clearCartRaw,
+    clearLocal,
+    clearError,
+  } = useCartStore();
 
-  // FIX: la firma correcta es addToCart(userId, menuItemId, cantidad, aditamentos)
-  // El backend espera POST /orders/cart/:userId con body { menuItemId, cantidad, aditamentos }
+  const cartCount =
+    cart?.items?.reduce((sum, i) => sum + i.cantidad, 0) ?? 0;
+  const hasItems = cartCount > 0;
+
+  const fetchCart = useCallback(() => {
+    if (userId) fetchCartRaw(userId);
+  }, [userId, fetchCartRaw]);
+
   const addToCart = useCallback(
-    async (userId, menuItemId, cantidad = 1, aditamentos = []) => {
-      if (!userId) throw new Error("userId requerido");
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await restaurantClient.post(`/orders/cart/${userId}`, {
-          menuItemId,
-          cantidad,
-          aditamentos,
-        });
-        const data = response.data.data ?? { items: [], subtotal: 0, iva: 0, total: 0 };
-        setCart(data);
-      } catch (err) {
-        const msg =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Error al agregar al carrito";
-        setError(msg);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
+    (menuItemId, cantidad = 1, aditamentos = []) => {
+      if (!userId) return Promise.resolve({ ok: false, message: "No autenticado" });
+      return addToCartRaw(userId, menuItemId, cantidad, aditamentos);
     },
-    []
+    [userId, addToCartRaw]
   );
 
   const updateCartItem = useCallback(
-    async (userId, menuItemId, cantidad) => {
-      if (!userId) return;
-      try {
-        setLoading(true);
-        setError(null);
-        await restaurantClient.patch(`/orders/cart/${userId}/${menuItemId}`, { cantidad });
-        await fetchCart(userId);
-      } catch (err) {
-        setError(err.response?.data?.message || err.response?.data?.error || "Error al actualizar ítem");
-        throw err;
-      } finally {
-        setLoading(false);
-      }
+    (menuItemId, cantidad) => {
+      if (userId) updateCartItemRaw(userId, menuItemId, cantidad);
     },
-    [fetchCart]
+    [userId, updateCartItemRaw]
   );
 
   const removeCartItem = useCallback(
-    async (userId, menuItemId) => {
-      if (!userId) return;
-      try {
-        setLoading(true);
-        setError(null);
-        await restaurantClient.delete(`/orders/cart/${userId}/${menuItemId}`);
-        await fetchCart(userId);
-      } catch (err) {
-        setError(err.response?.data?.message || err.response?.data?.error || "Error al eliminar ítem");
-        throw err;
-      } finally {
-        setLoading(false);
-      }
+    (menuItemId) => {
+      if (userId) removeCartItemRaw(userId, menuItemId);
     },
-    [fetchCart]
+    [userId, removeCartItemRaw]
   );
 
-  const clearCart = useCallback(async (userId) => {
-    if (!userId) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await restaurantClient.delete(`/orders/cart/${userId}`);
-      setCart({ items: [], subtotal: 0, iva: 0, total: 0 });
-    } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || "Error al vaciar carrito");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const cartCount = cart?.items?.reduce((sum, item) => sum + item.cantidad, 0) || 0;
+  const clearCart = useCallback(() => {
+    if (userId) return clearCartRaw(userId);
+  }, [userId, clearCartRaw]);
 
   return {
     cart,
-    cartCount,
+    isCartOpen,
     loading,
     error,
+    cartCount,
+    hasItems,
+    openCart,
+    closeCart,
+    toggleCart,
     fetchCart,
     addToCart,
     updateCartItem,
     removeCartItem,
     clearCart,
+    clearLocal,
+    clearError,
   };
 };
