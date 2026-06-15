@@ -1,4 +1,4 @@
-// client-user/src/features/admin/screens/ReservationsListScreen.jsx
+// client-user/src/features/reservations/screens/ReservationsListScreen.jsx
 
 import React, { useState, useCallback, useEffect } from "react";
 import {
@@ -8,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  Modal,
   Alert,
   ActivityIndicator,
 } from "react-native";
@@ -22,16 +21,11 @@ import {
   BORDER_RADIUS,
 } from "../../../shared/constants/theme";
 import { Card } from "../../../shared/components/common/Common";
-import { useResAdminReservations } from "../hooks/useReservations.js";
+import { useReservations } from "../hooks/useReservations.js";
 
 // Valores de status alineados con el backend:
 // PENDIENTE, CONFIRMADA, CANCELADA, FINALIZADA
-const STATUS_TRANSITIONS = {
-  PENDIENTE: ["CONFIRMADA", "CANCELADA"],
-  CONFIRMADA: [],   // El backend solo permite confirmar/cancelar desde PENDIENTE vía token
-  FINALIZADA: [],
-  CANCELADA: [],
-};
+const CANCELABLE_STATUSES = ["PENDIENTE", "CONFIRMADA"];
 
 const STATUS_FILTERS = ["TODOS", "PENDIENTE", "CONFIRMADA", "FINALIZADA", "CANCELADA"];
 
@@ -40,11 +34,6 @@ const STATUS_CONFIG = {
   CONFIRMADA: { label: "Confirmada", color: "#4ade80", icon: "check-circle-outline" },
   FINALIZADA: { label: "Finalizada", color: "#60a5fa", icon: "done-all" },
   CANCELADA: { label: "Cancelada", color: "#f87171", icon: "cancel" },
-};
-
-const STATUS_ACTION_LABELS = {
-  CONFIRMADA: "Confirmar reservación",
-  CANCELADA: "Cancelar reservación",
 };
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
@@ -81,14 +70,17 @@ const badge = StyleSheet.create({
 });
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-const ReservationCard = ({ item, onManage }) => {
-  const transitions = STATUS_TRANSITIONS[item.status] ?? [];
-  const isTerminal = transitions.length === 0;
+const ReservationCard = ({ item, onCancel, cancelingId }) => {
+  const isCancelable = CANCELABLE_STATUSES.includes(item.status);
+  const isCanceling = cancelingId === item._id;
 
   return (
     <Card style={styles.reservationCard}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
+          {item.restaurantName ? (
+            <Text style={styles.restaurantName}>{item.restaurantName}</Text>
+          ) : null}
           <Text style={styles.guestName}>{item.peopleName}</Text>
         </View>
         <StatusBadge status={item.status} />
@@ -134,175 +126,26 @@ const ReservationCard = ({ item, onManage }) => {
         </View>
       ) : null}
 
-      {!isTerminal && (
+      {isCancelable && (
         <TouchableOpacity
-          style={styles.manageBtn}
-          onPress={() => onManage(item)}
+          style={[styles.cancelBtn, isCanceling && styles.cancelBtnDisabled]}
+          onPress={() => onCancel(item)}
+          disabled={isCanceling}
           activeOpacity={0.8}
         >
-          <Text style={styles.manageBtnText}>Gestionar reservación</Text>
-          <MaterialIcons name="chevron-right" size={16} color={COLORS.primary} />
+          {isCanceling ? (
+            <ActivityIndicator size="small" color="#f87171" />
+          ) : (
+            <>
+              <Text style={styles.cancelBtnText}>Cancelar reservación</Text>
+              <MaterialIcons name="close" size={16} color="#f87171" />
+            </>
+          )}
         </TouchableOpacity>
       )}
     </Card>
   );
 };
-
-// ─── Modal de gestión ─────────────────────────────────────────────────────────
-const ManageModal = ({ visible, reservation, onClose, onUpdateStatus, loading }) => {
-  if (!reservation) return null;
-  const transitions = STATUS_TRANSITIONS[reservation.status] ?? [];
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={mdl.overlay}>
-        <View style={mdl.sheet}>
-          <View style={mdl.header}>
-            <View>
-              <Text style={mdl.title}>Gestionar reservación</Text>
-              <Text style={mdl.sub}>{reservation.peopleName}</Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={mdl.closeBtn}>
-              <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.8)" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={mdl.body}>
-            <Text style={mdl.currentLabel}>Estado actual</Text>
-            <StatusBadge status={reservation.status} />
-
-            {transitions.length > 0 && (
-              <>
-                <Text style={mdl.actionsLabel}>Cambiar a</Text>
-                <View style={mdl.actionsGrid}>
-                  {transitions.map((nextStatus) => {
-                    const isDanger = nextStatus === "CANCELADA";
-                    return (
-                      <TouchableOpacity
-                        key={nextStatus}
-                        style={[
-                          mdl.actionBtn,
-                          isDanger ? mdl.actionBtnDanger : mdl.actionBtnPrimary,
-                          loading && mdl.actionBtnDisabled,
-                        ]}
-                        onPress={() => onUpdateStatus(reservation._id, nextStatus)}
-                        disabled={loading}
-                        activeOpacity={0.8}
-                      >
-                        {loading ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={isDanger ? "#f87171" : "#fff"}
-                          />
-                        ) : (
-                          <Text
-                            style={[
-                              mdl.actionBtnText,
-                              isDanger && mdl.actionBtnTextDanger,
-                            ]}
-                          >
-                            {STATUS_ACTION_LABELS[nextStatus] || nextStatus}
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity style={mdl.cancelBtn} onPress={onClose}>
-              <Text style={mdl.cancelBtnText}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-const mdl = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.primary,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
-  },
-  title: { color: "#fff", fontSize: FONT_SIZE.lg, fontWeight: "700" },
-  sub: { color: "rgba(255,255,255,0.7)", fontSize: FONT_SIZE.xs, marginTop: 2 },
-  closeBtn: { padding: 4 },
-  body: { padding: SPACING.lg, gap: SPACING.md },
-  currentLabel: {
-    color: COLORS.textMuted,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  actionsLabel: {
-    color: COLORS.textMuted,
-    fontSize: FONT_SIZE.xs,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginTop: SPACING.md,
-    marginBottom: 4,
-  },
-  actionsGrid: { gap: SPACING.sm },
-  actionBtn: {
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  actionBtnPrimary: { backgroundColor: COLORS.primary },
-  actionBtnDanger: {
-    backgroundColor: "rgba(239,68,68,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.25)",
-  },
-  actionBtnDisabled: { opacity: 0.5 },
-  actionBtnText: { color: "#fff", fontSize: FONT_SIZE.md, fontWeight: "700" },
-  actionBtnTextDanger: { color: "#f87171" },
-  cancelBtn: {
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: "center",
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  cancelBtnText: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: FONT_SIZE.sm,
-    fontWeight: "600",
-  },
-});
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 const ReservationsListScreen = () => {
@@ -312,43 +155,53 @@ const ReservationsListScreen = () => {
     reservations,
     loading,
     error,
-    fetchReservations,
-    updateReservationStatus,
-  } = useResAdminReservations();
+    fetchMyReservations,
+    cancelReservation,
+  } = useReservations();
 
-  const [filter, setFilter] = useState("PENDIENTE");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedReservation, setSelectedReservation] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [filter, setFilter] = useState("TODOS");
+  const [cancelingId, setCancelingId] = useState(null);
 
   useEffect(() => {
-    fetchReservations();
+    fetchMyReservations();
     const unsubscribe = navigation.addListener("focus", () => {
-      fetchReservations();
+      fetchMyReservations();
     });
     return unsubscribe;
-  }, [navigation, fetchReservations]);
+  }, [navigation, fetchMyReservations]);
 
-  const handleManage = useCallback((reservation) => {
-    setSelectedReservation(reservation);
-    setModalVisible(true);
-  }, []);
-
-  const handleUpdateStatus = useCallback(
-    async (reservationId, newStatus) => {
-      setActionLoading(true);
-      const result = await updateReservationStatus(reservationId, newStatus);
-      setActionLoading(false);
-
-      if (result.success) {
-        setModalVisible(false);
-        setSelectedReservation(null);
-        Alert.alert("Éxito", "Estado de la reservación actualizado");
-      } else {
-        Alert.alert("Error", result.error || "No se pudo actualizar el estado");
-      }
+  const handleCancel = useCallback(
+    (reservation) => {
+      Alert.alert(
+        "Cancelar reservación",
+        `¿Seguro que deseas cancelar la reservación de "${reservation.peopleName}"${reservation.restaurantName ? ` en ${reservation.restaurantName}` : ""
+        }?`,
+        [
+          { text: "No", style: "cancel" },
+          {
+            text: "Sí, cancelar",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setCancelingId(reservation._id);
+                await cancelReservation(reservation._id);
+                await fetchMyReservations();
+              } catch (err) {
+                Alert.alert(
+                  "Error",
+                  err.response?.data?.message ||
+                  err.response?.data?.error ||
+                  "No se pudo cancelar la reservación"
+                );
+              } finally {
+                setCancelingId(null);
+              }
+            },
+          },
+        ]
+      );
     },
-    [updateReservationStatus]
+    [cancelReservation, fetchMyReservations]
   );
 
   const filteredReservations =
@@ -360,18 +213,26 @@ const ReservationsListScreen = () => {
     <View style={styles.container}>
       {/* Header con Safe Area */}
       <View style={[styles.screenHeader, { paddingTop: insets.top + SPACING.sm }]}>
-        <Text style={styles.screenTitle}>Reservaciones</Text>
-        <TouchableOpacity
-          onPress={fetchReservations}
-          style={[styles.refreshBtn, loading && { opacity: 0.5 }]}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : (
-            <MaterialIcons name="refresh" size={22} color={COLORS.primary} />
-          )}
-        </TouchableOpacity>
+        <Text style={styles.screenTitle}>Mis Reservaciones</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("CreateReservation")}
+            style={styles.headerBtn}
+          >
+            <MaterialIcons name="add" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={fetchMyReservations}
+            style={[styles.headerBtn, loading && { opacity: 0.5 }]}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <MaterialIcons name="refresh" size={22} color={COLORS.primary} />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Filtros */}
@@ -396,11 +257,19 @@ const ReservationsListScreen = () => {
                 filter === status && styles.filterTextActive,
               ]}
             >
-              {STATUS_CONFIG[status]?.label || status}
+              {status === "TODOS" ? "Todos" : STATUS_CONFIG[status]?.label || status}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {/* Error */}
+      {error ? (
+        <View style={styles.errorBanner}>
+          <MaterialIcons name="error-outline" size={18} color="#f87171" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       {/* Lista */}
       {loading && filteredReservations.length === 0 ? (
@@ -411,7 +280,11 @@ const ReservationsListScreen = () => {
         <FlatList
           data={filteredReservations}
           renderItem={({ item }) => (
-            <ReservationCard item={item} onManage={handleManage} />
+            <ReservationCard
+              item={item}
+              onCancel={handleCancel}
+              cancelingId={cancelingId}
+            />
           )}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
@@ -423,22 +296,21 @@ const ReservationsListScreen = () => {
           <Text style={styles.emptyText}>No hay reservaciones</Text>
           <Text style={styles.emptySubtext}>
             {filter === "TODOS"
-              ? "Sin reservaciones registradas"
+              ? "Aún no tienes reservaciones registradas"
               : `Sin reservaciones en "${STATUS_CONFIG[filter]?.label || filter}"`}
           </Text>
+          {filter === "TODOS" && (
+            <TouchableOpacity
+              style={styles.emptyActionBtn}
+              onPress={() => navigation.navigate("CreateReservation")}
+              activeOpacity={0.85}
+            >
+              <MaterialIcons name="add" size={18} color="#fff" />
+              <Text style={styles.emptyActionText}>Nueva reservación</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
-
-      <ManageModal
-        visible={modalVisible}
-        reservation={selectedReservation}
-        onClose={() => {
-          setModalVisible(false);
-          setSelectedReservation(null);
-        }}
-        onUpdateStatus={handleUpdateStatus}
-        loading={actionLoading}
-      />
     </View>
   );
 };
@@ -456,7 +328,8 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   screenTitle: { color: COLORS.text, fontSize: FONT_SIZE.lg, fontWeight: "700" },
-  refreshBtn: { padding: SPACING.xs },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  headerBtn: { padding: SPACING.xs },
   filterBar: {
     flexGrow: 0,
     flexShrink: 0,
@@ -490,6 +363,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   filterTextActive: { color: "#fff" },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    backgroundColor: "rgba(239,68,68,0.08)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(239,68,68,0.2)",
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  errorText: { color: "#f87171", fontSize: FONT_SIZE.sm, flex: 1 },
   listContent: { padding: SPACING.lg },
   reservationCard: { marginBottom: SPACING.md, padding: SPACING.md },
   cardHeader: {
@@ -497,6 +381,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: SPACING.md,
+  },
+  restaurantName: {
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   guestName: {
     color: COLORS.text,
@@ -521,17 +413,20 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xs,
     fontStyle: "italic",
   },
-  manageBtn: {
+  cancelBtn: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
+    gap: SPACING.xs,
     marginTop: SPACING.sm,
     paddingTop: SPACING.sm,
+    paddingBottom: 2,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
-  manageBtnText: {
-    color: COLORS.primary,
+  cancelBtnDisabled: { opacity: 0.5 },
+  cancelBtnText: {
+    color: "#f87171",
     fontSize: FONT_SIZE.sm,
     fontWeight: "600",
   },
@@ -548,6 +443,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     textAlign: "center",
   },
+  emptyActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.xl,
+    marginTop: SPACING.sm,
+  },
+  emptyActionText: { color: "#fff", fontSize: FONT_SIZE.sm, fontWeight: "700" },
 });
 
 export default ReservationsListScreen;
