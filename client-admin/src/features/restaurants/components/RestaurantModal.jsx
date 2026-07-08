@@ -63,6 +63,8 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
 
   if (!isOpen) return null;
 
+  const businessHoursOpen = watch('businessHoursOpen');
+
   const submit = async (values) => {
     const formData = new FormData();
     formData.append('name', values.name);
@@ -161,6 +163,7 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
                 {...register('capacity', {
                   required: 'La capacidad es obligatoria',
                   min: { value: 20, message: 'Mínimo 20 personas' },
+                  max: { value: 500, message: 'Máximo 500 personas' },
                 })}
                 type='number'
                 placeholder='50'
@@ -172,7 +175,10 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
             <div className='md:col-span-2'>
               <label className='dbe-label'>Dirección</label>
               <input
-                {...register('address', { required: 'La dirección es obligatoria' })}
+                {...register('address', {
+                  required: 'La dirección es obligatoria',
+                  maxLength: { value: 150, message: 'Máximo 150 caracteres' },
+                })}
                 type='text'
                 placeholder='6a Avenida 3-45, Zona 1, Ciudad de Guatemala'
                 className='dbe-input-dark w-full px-3 py-2 text-sm'
@@ -188,6 +194,8 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
                   pattern: { value: /^\d{8}$/, message: 'Debe ser de 8 dígitos' },
                 })}
                 type='tel'
+                inputMode='numeric'
+                maxLength={8}
                 placeholder='22345678'
                 className='dbe-input-dark w-full px-3 py-2 text-sm'
               />
@@ -197,11 +205,14 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
             <div>
               <label className='dbe-label'>Nombre del encargado</label>
               <input
-                {...register('managerName')}
+                {...register('managerName', {
+                  maxLength: { value: 100, message: 'Máximo 100 caracteres' },
+                })}
                 type='text'
                 placeholder='Carlos Méndez'
                 className='dbe-input-dark w-full px-3 py-2 text-sm'
               />
+              {errors.managerName && <p className='dbe-error'>{errors.managerName.message}</p>}
             </div>
 
             <div>
@@ -217,11 +228,18 @@ export const RestaurantModal = ({ isOpen, onClose, onSave, loading, error, resta
             <div>
               <label className='dbe-label'>Hora de cierre</label>
               <input
-                {...register('businessHoursClose')}
+                {...register('businessHoursClose', {
+                  validate: (value) =>
+                    !businessHoursOpen || !value || value > businessHoursOpen ||
+                    'El cierre debe ser posterior a la apertura',
+                })}
                 type='time'
                 className='dbe-input-dark w-full px-3 py-2 text-sm'
                 style={{ colorScheme: 'dark' }}
               />
+              {errors.businessHoursClose && (
+                <p className='dbe-error'>{errors.businessHoursClose.message}</p>
+              )}
             </div>
 
             <div className='md:col-span-2'>
