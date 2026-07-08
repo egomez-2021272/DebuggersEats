@@ -1,10 +1,11 @@
 // client-user/src/features/admin/components/CreateRestaurantModal.jsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Image, Alert, Platform, Dimensions, KeyboardAvoidingView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useForm } from "react-hook-form";
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from "../../../shared/constants/theme";
 import { Card } from "../../../shared/components/common/Common";
 import Button from "../../../shared/components/common/Button";
@@ -33,79 +34,88 @@ const formatTimeString = (date) => {
   return `${hours}:${minutes}`;
 };
 
+// Convierte "HH:MM" a minutos desde medianoche, para poder comparar horarios entre sí
+const timeStringToMinutes = (timeStr) => {
+  if (!timeStr || !/^\d{1,2}:\d{2}$/.test(timeStr)) return null;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+};
+
 const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, loading }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    phone: "",
-    category: "COMIDA_RAPIDA",
-    capacity: "",
-    businessHoursOpen: "",
-    businessHoursClose: "",
-    managerName: "",
-    contactEmail: "",
-    photo: null,
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: "",
+      address: "",
+      phone: "",
+      capacity: "",
+      managerName: "",
+      contactEmail: "",
+      businessHoursOpen: "08:00",
+      businessHoursClose: "22:00",
+    },
   });
+
+  const [category, setCategory] = useState("COMIDA_RAPIDA");
   const [preview, setPreview] = useState(null);
+  const [photo, setPhoto] = useState(null);
 
   const [openTime, setOpenTime] = useState(() => parseTimeString(null, 8, 0));
   const [closeTime, setCloseTime] = useState(() => parseTimeString(null, 22, 0));
   const [showOpenPicker, setShowOpenPicker] = useState(false);
   const [showClosePicker, setShowClosePicker] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!visible) return;
 
     if (restaurant) {
-      const openStr = restaurant.businessHours?.open || "";
-      const closeStr = restaurant.businessHours?.close || "";
-      setFormData({
+      const openStr = restaurant.businessHours?.open || "08:00";
+      const closeStr = restaurant.businessHours?.close || "22:00";
+      reset({
         name: restaurant.name || "",
         address: restaurant.address || "",
         phone: restaurant.phone || "",
-        category: restaurant.category || "COMIDA_RAPIDA",
         capacity: restaurant.capacity?.toString() || "",
-        businessHoursOpen: openStr,
-        businessHoursClose: closeStr,
         managerName: restaurant.contactInfo?.managerName || "",
         contactEmail: restaurant.contactInfo?.email || "",
-        photo: null,
+        businessHoursOpen: openStr,
+        businessHoursClose: closeStr,
       });
+      setCategory(restaurant.category || "COMIDA_RAPIDA");
       setOpenTime(parseTimeString(openStr, 8, 0));
       setCloseTime(parseTimeString(closeStr, 22, 0));
       setPreview(restaurant.photo || null);
+      setPhoto(null);
     } else {
-      setFormData({
+      reset({
         name: "",
         address: "",
         phone: "",
-        category: "COMIDA_RAPIDA",
         capacity: "",
-        businessHoursOpen: "",
-        businessHoursClose: "",
         managerName: "",
         contactEmail: "",
-        photo: null,
+        businessHoursOpen: "08:00",
+        businessHoursClose: "22:00",
       });
+      setCategory("COMIDA_RAPIDA");
       setOpenTime(parseTimeString(null, 8, 0));
       setCloseTime(parseTimeString(null, 22, 0));
       setPreview(null);
+      setPhoto(null);
     }
-  }, [visible, restaurant]);
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  }, [visible, restaurant, reset]);
 
   const handleOpenTimeChange = (event, time) => {
     if (Platform.OS === "android") setShowOpenPicker(false);
     if (event.type === "dismissed") return;
     if (time) {
       setOpenTime(time);
-      handleChange("businessHoursOpen", formatTimeString(time));
+      setValue("businessHoursOpen", formatTimeString(time));
     }
   };
 
@@ -114,40 +124,32 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
     if (event.type === "dismissed") return;
     if (time) {
       setCloseTime(time);
-      handleChange("businessHoursClose", formatTimeString(time));
+      setValue("businessHoursClose", formatTimeString(time));
     }
   };
 
-  const handleSubmit = () => {
-    if (!formData.name.trim()) {
-      Alert.alert("Error", "El nombre del restaurante es obligatorio");
-      return;
-    }
-    if (!formData.address.trim()) {
-      Alert.alert("Error", "La dirección es obligatoria");
-      return;
-    }
-    if (!formData.phone.trim()) {
-      Alert.alert("Error", "El teléfono es obligatorio");
-      return;
-    }
-    if (!formData.capacity.trim()) {
-      Alert.alert("Error", "La capacidad es obligatoria");
+  const onFormSubmit = (values) => {
+    // El horario abre/cierra no pasa por un <Input>, así que se valida aparte,
+    // igual que en CreateReviewModal se valida la calificación con Alert.
+    const openMinutes = timeStringToMinutes(values.businessHoursOpen);
+    const closeMinutes = timeStringToMinutes(values.businessHoursClose);
+    if (openMinutes !== null && closeMinutes !== null && closeMinutes <= openMinutes) {
+      Alert.alert("Horario inválido", "El horario de cierre debe ser posterior al horario de apertura");
       return;
     }
 
     const payload = new FormData();
-    payload.append("name", formData.name);
-    payload.append("address", formData.address);
-    payload.append("phone", formData.phone);
-    payload.append("category", formData.category);
-    payload.append("capacity", formData.capacity);
-    payload.append("businessHoursOpen", formData.businessHoursOpen);
-    payload.append("businessHoursClose", formData.businessHoursClose);
-    payload.append("managerName", formData.managerName);
-    payload.append("contactEmail", formData.contactEmail);
-    if (formData.photo) {
-      payload.append("photo", formData.photo);
+    payload.append("name", values.name.trim());
+    payload.append("address", values.address.trim());
+    payload.append("phone", values.phone.trim());
+    payload.append("category", category);
+    payload.append("capacity", values.capacity);
+    payload.append("businessHoursOpen", values.businessHoursOpen);
+    payload.append("businessHoursClose", values.businessHoursClose);
+    payload.append("managerName", values.managerName.trim());
+    payload.append("contactEmail", values.contactEmail.trim());
+    if (photo) {
+      payload.append("photo", photo);
     }
 
     onSubmit(payload, restaurant?._id);
@@ -172,7 +174,7 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
       const match = filename?.match(/\.([0-9a-z]+)(?:[\?#]|$)/i);
       const type = match ? `image/${match[1]}` : 'image';
 
-      handleChange('photo', {
+      setPhoto({
         uri: localUri,
         name: filename,
         type,
@@ -217,75 +219,96 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
               </TouchableOpacity>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Nombre del restaurante</Text>
-              <Input
-                placeholder="Ej: Mi Restaurante"
-                value={formData.name}
-                onChangeText={(value) => handleChange("name", value)}
-                editable={!loading}
-              />
-            </View>
+            <Input
+              label="Nombre del restaurante"
+              control={control}
+              name="name"
+              rules={{
+                required: "El nombre del restaurante es obligatorio",
+                maxLength: { value: 100, message: "Máximo 100 caracteres" },
+              }}
+              error={errors.name?.message}
+              placeholder="Ej: Mi Restaurante"
+              editable={!loading}
+            />
 
             <View style={styles.formGroupRow}>
               <View style={styles.formHalf}>
-                <Text style={styles.label}>Dirección</Text>
                 <Input
+                  label="Dirección"
+                  control={control}
+                  name="address"
+                  rules={{
+                    required: "La dirección es obligatoria",
+                    maxLength: { value: 150, message: "Máximo 150 caracteres" },
+                  }}
+                  error={errors.address?.message}
                   placeholder="Ej: Calle Principal 123"
-                  value={formData.address}
-                  onChangeText={(value) => handleChange("address", value)}
                   editable={!loading}
                 />
               </View>
               <View style={styles.formHalf}>
-                <Text style={styles.label}>Teléfono</Text>
                 <Input
+                  label="Teléfono"
+                  control={control}
+                  name="phone"
+                  rules={{
+                    required: "El teléfono es obligatorio",
+                    pattern: { value: /^\d{8}$/, message: "Debe ser de 8 dígitos" },
+                  }}
+                  error={errors.phone?.message}
                   placeholder="Ej: 2468-1234"
-                  value={formData.phone}
-                  onChangeText={(value) => handleChange("phone", value)}
                   editable={!loading}
                   keyboardType="phone-pad"
+                  maxLength={8}
                 />
               </View>
             </View>
 
+            {/* Categoría: en su propia fila, a todo el ancho, sin ScrollView anidado */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Categoría</Text>
               <View style={styles.categoryWrap}>
-                {CATEGORIES.map((category) => (
+                {CATEGORIES.map((cat) => (
                   <TouchableOpacity
-                    key={category}
+                    key={cat}
                     style={[
                       styles.categoryButton,
-                      formData.category === category && styles.categoryButtonSelected,
+                      category === cat && styles.categoryButtonSelected,
                     ]}
-                    onPress={() => handleChange("category", category)}
+                    onPress={() => setCategory(cat)}
                     disabled={loading}
                   >
                     <Text
                       style={[
                         styles.categoryButtonText,
-                        formData.category === category && styles.categoryButtonTextSelected,
+                        category === cat && styles.categoryButtonTextSelected,
                       ]}
                     >
-                      {category}
+                      {cat}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Capacidad</Text>
-              <Input
-                placeholder="Ej: 50"
-                value={formData.capacity}
-                onChangeText={(value) => handleChange("capacity", value)}
-                editable={!loading}
-                keyboardType="numeric"
-              />
-            </View>
+            <Input
+              label="Capacidad"
+              control={control}
+              name="capacity"
+              rules={{
+                required: "La capacidad es obligatoria",
+                pattern: { value: /^\d+$/, message: "Debe ser un número entero" },
+                min: { value: 20, message: "Mínimo 20 personas" },
+                max: { value: 500, message: "Máximo 500 personas" },
+              }}
+              error={errors.capacity?.message}
+              placeholder="Ej: 50"
+              editable={!loading}
+              keyboardType="numeric"
+            />
 
+            {/* Horarios como date/time picker, mismo patrón que CreateReservationScreen */}
             <View style={styles.formGroupRow}>
               <View style={styles.formHalf}>
                 <Text style={styles.label}>Horario apertura</Text>
@@ -333,20 +356,28 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
 
             <View style={styles.formGroupRow}>
               <View style={styles.formHalf}>
-                <Text style={styles.label}>Encargado</Text>
                 <Input
+                  label="Encargado"
+                  control={control}
+                  name="managerName"
+                  rules={{
+                    maxLength: { value: 100, message: "Máximo 100 caracteres" },
+                  }}
+                  error={errors.managerName?.message}
                   placeholder="Ej: Carlos Méndez"
-                  value={formData.managerName}
-                  onChangeText={(value) => handleChange("managerName", value)}
                   editable={!loading}
                 />
               </View>
               <View style={styles.formHalf}>
-                <Text style={styles.label}>Correo contacto</Text>
                 <Input
+                  label="Correo contacto"
+                  control={control}
+                  name="contactEmail"
+                  rules={{
+                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Correo inválido" },
+                  }}
+                  error={errors.contactEmail?.message}
                   placeholder="Ej: contacto@restaurante.com"
-                  value={formData.contactEmail}
-                  onChangeText={(value) => handleChange("contactEmail", value)}
                   editable={!loading}
                   keyboardType="email-address"
                 />
@@ -364,7 +395,7 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
             />
             <Button
               title="Crear"
-              onPress={handleSubmit}
+              onPress={handleSubmit(onFormSubmit)}
               loading={loading}
               disabled={loading}
               style={{ flex: 1, marginLeft: SPACING.md }}
