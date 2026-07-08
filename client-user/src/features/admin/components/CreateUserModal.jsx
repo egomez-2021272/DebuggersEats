@@ -20,6 +20,7 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
     surname: "",
     email: "",
     username: "",
+    phone: "",
     password: "",
     role: "USER_ROLE",
   });
@@ -33,25 +34,64 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
     }));
   };
 
+  const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const USERNAME_REGEX = /^\S+$/;
+  const PHONE_REGEX = /^[0-9]{8}$/;
+
   const handleSubmit = () => {
-    if (!formData.firstName.trim()) {
+    const firstName = formData.firstName.trim();
+    const surname = formData.surname.trim();
+    const email = formData.email.trim();
+    const username = formData.username.trim();
+    const phone = formData.phone.trim();
+
+    if (!firstName) {
       Alert.alert("Error", "El nombre es obligatorio");
       return;
     }
-    if (!formData.surname.trim()) {
+    if (firstName.length < 2) {
+      Alert.alert("Error", "El nombre debe tener al menos 2 caracteres");
+      return;
+    }
+    if (!NAME_REGEX.test(firstName)) {
+      Alert.alert("Error", "El nombre solo puede contener letras");
+      return;
+    }
+    if (!surname) {
       Alert.alert("Error", "El apellido es obligatorio");
       return;
     }
-    if (!formData.email.trim()) {
+    if (surname.length < 2) {
+      Alert.alert("Error", "El apellido debe tener al menos 2 caracteres");
+      return;
+    }
+    if (!NAME_REGEX.test(surname)) {
+      Alert.alert("Error", "El apellido solo puede contener letras");
+      return;
+    }
+    if (!email) {
       Alert.alert("Error", "El email es obligatorio");
       return;
     }
-    if (!formData.email.includes("@")) {
+    if (!EMAIL_REGEX.test(email)) {
       Alert.alert("Error", "Email inválido");
       return;
     }
-    if (!formData.username.trim()) {
+    if (!username) {
       Alert.alert("Error", "El usuario es obligatorio");
+      return;
+    }
+    if (username.length < 3) {
+      Alert.alert("Error", "El usuario debe tener al menos 3 caracteres");
+      return;
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      Alert.alert("Error", "El usuario no puede contener espacios");
+      return;
+    }
+    if (phone && !PHONE_REGEX.test(phone)) {
+      Alert.alert("Error", "El teléfono debe tener 8 dígitos");
       return;
     }
     if (!formData.password.trim()) {
@@ -63,12 +103,20 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
       return;
     }
 
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      firstName,
+      surname,
+      email,
+      username,
+      phone: phone || undefined,
+    });
     setFormData({
       firstName: "",
       surname: "",
       email: "",
       username: "",
+      phone: "",
       password: "",
       role: "USER_ROLE",
     });
@@ -125,6 +173,18 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
                 value={formData.username}
                 onChangeText={(value) => handleChange("username", value)}
                 editable={!loading}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Teléfono</Text>
+              <Input
+                placeholder="Ej: 12345678"
+                value={formData.phone}
+                onChangeText={(value) => handleChange("phone", value)}
+                editable={!loading}
+                keyboardType="phone-pad"
+                maxLength={8}
               />
             </View>
 

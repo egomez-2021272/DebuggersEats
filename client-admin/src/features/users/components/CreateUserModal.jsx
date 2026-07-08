@@ -60,7 +60,15 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
               <input
                 type='text'
                 className='dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition'
-                {...register('firstName', { required: 'El nombre es obligatorio' })}
+                {...register('firstName', {
+                  required: 'El nombre es obligatorio',
+                  minLength: { value: 2, message: 'Mínimo 2 caracteres' },
+                  maxLength: { value: 50, message: 'Máximo 50 caracteres' },
+                  pattern: {
+                    value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+                    message: 'Solo se permiten letras',
+                  },
+                })}
               />
               {errors.firstName && <p className='dbe-error'>{errors.firstName.message}</p>}
             </div>
@@ -69,7 +77,15 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
               <input
                 type='text'
                 className='dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition'
-                {...register('surname', { required: 'El apellido es obligatorio' })}
+                {...register('surname', {
+                  required: 'El apellido es obligatorio',
+                  minLength: { value: 2, message: 'Mínimo 2 caracteres' },
+                  maxLength: { value: 50, message: 'Máximo 50 caracteres' },
+                  pattern: {
+                    value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+                    message: 'Solo se permiten letras',
+                  },
+                })}
               />
               {errors.surname && <p className='dbe-error'>{errors.surname.message}</p>}
             </div>
@@ -84,6 +100,11 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
                 {...register('username', {
                   required: 'El username es obligatorio',
                   minLength: { value: 3, message: 'Mínimo 3 caracteres' },
+                  maxLength: { value: 20, message: 'Máximo 20 caracteres' },
+                  pattern: {
+                    value: /^\S+$/,
+                    message: 'El username no puede contener espacios',
+                  },
                 })}
               />
               {errors.username && <p className='dbe-error'>{errors.username.message}</p>}
@@ -93,8 +114,14 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
               <input
                 type='tel'
                 className='dbe-input-dark w-full px-3 py-2 text-sm rounded-lg transition'
-                {...register('phone')}
+                {...register('phone', {
+                  pattern: {
+                    value: /^[0-9]{8}$/,
+                    message: 'El teléfono debe tener 8 dígitos',
+                  },
+                })}
               />
+              {errors.phone && <p className='dbe-error'>{errors.phone.message}</p>}
             </div>
           </div>
 
@@ -174,6 +201,10 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading, restaurant
                 {...register('password', {
                   required: 'La contraseña es obligatoria',
                   minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+                  pattern: {
+                    value: /^(?=.*[A-Za-z])(?=.*\d).+$/,
+                    message: 'Debe incluir al menos una letra y un número',
+                  },
                 })}
               />
               {errors.password && <p className='dbe-error'>{errors.password.message}</p>}
