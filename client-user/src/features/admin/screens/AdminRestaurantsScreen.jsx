@@ -102,6 +102,7 @@ const AdminRestaurantsScreen = () => {
     deleteRestaurant,
     createRestaurant,
     updateRestaurant,
+    uploadRestaurantPhoto,
   } = useAdminRestaurants();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -122,18 +123,40 @@ const AdminRestaurantsScreen = () => {
     );
   });
 
-  const handleCreateRestaurant = async (formData, restaurantId) => {
+  const handleCreateRestaurant = async (data, restaurantId, photo) => {
     setCreating(true);
-    const result = restaurantId
-      ? await updateRestaurant(restaurantId, formData)
-      : await createRestaurant(formData);
+    let result;
+    let photoError = null;
+
+    if (restaurantId) {
+      result = await updateRestaurant(restaurantId, data);
+      // Si se seleccionó una foto nueva, se sube aparte con el endpoint dedicado
+      if (result.success && photo) {
+        const photoResult = await uploadRestaurantPhoto(restaurantId, photo);
+        if (photoResult.success) {
+          result = photoResult;
+        } else {
+          // Los datos de texto sí se guardaron, pero la foto falló: hay que decirlo
+          photoError = photoResult.error || "No se pudo subir la foto del restaurante";
+        }
+      }
+    } else {
+      result = await createRestaurant(data);
+    }
     setCreating(false);
 
     if (result.success) {
-      Alert.alert(
-        "Éxito",
-        restaurantId ? "Restaurante actualizado exitosamente" : "Restaurante creado exitosamente"
-      );
+      if (photoError) {
+        Alert.alert(
+          "Restaurante actualizado",
+          `Los datos se guardaron correctamente, pero la foto no se pudo subir: ${photoError}`
+        );
+      } else {
+        Alert.alert(
+          "Éxito",
+          restaurantId ? "Restaurante actualizado exitosamente" : "Restaurante creado exitosamente"
+        );
+      }
       setModalVisible(false);
       setEditingRestaurant(null);
     } else {

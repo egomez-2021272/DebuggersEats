@@ -68,7 +68,7 @@ export const UserPage = () => {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder='Busca restaurante, plato o evento...'
+          placeholder='Busca restaurante...'
           className='bg-transparent border-none outline-none text-white text-[13px] flex-1'
         />
       </div>

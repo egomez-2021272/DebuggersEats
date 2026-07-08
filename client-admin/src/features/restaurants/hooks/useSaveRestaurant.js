@@ -3,6 +3,7 @@ import { useRestaurantStore } from '../store/restaurantStore';
 export const useSaveRestaurant = () => {
   const createRestaurant = useRestaurantStore((state) => state.createRestaurant);
   const updateRestaurant = useRestaurantStore((state) => state.updateRestaurant);
+  const uploadPhoto = useRestaurantStore((state) => state.uploadPhoto);
 
   const saveRestaurant = async (formData, restaurantId = null) => {
     try {
@@ -23,6 +24,15 @@ export const useSaveRestaurant = () => {
           },
         };
         await updateRestaurant(restaurantId, payload);
+
+        // El PATCH de arriba envía JSON y no procesa archivos, así que la foto
+        // (si se seleccionó una nueva) se sube aparte con el endpoint dedicado.
+        const photo = formData.get('photo');
+        if (photo) {
+          const photoFormData = new FormData();
+          photoFormData.append('photo', photo);
+          await uploadPhoto(restaurantId, photoFormData);
+        }
       } else {
         await createRestaurant(formData);
       }
