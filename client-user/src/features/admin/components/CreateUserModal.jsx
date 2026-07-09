@@ -1,147 +1,76 @@
 // client-user/src/features/admin/components/CreateUserModal.jsx
 
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useForm, Controller } from "react-hook-form";
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from "../../../shared/constants/theme";
 import { Card } from "../../../shared/components/common/Common";
 import Button from "../../../shared/components/common/Button";
 import Input from "../../../shared/components/common/Input";
 
 const ROLES = [
-  { value: "ADMIN_ROLE", label: "Admin" },
   { value: "RES_ADMIN_ROLE", label: "Admin Restaurante" },
   { value: "USER_ROLE", label: "Usuario" },
 ];
 
+const defaultValues = {
+  firstName: "",
+  surname: "",
+  email: "",
+  username: "",
+  phone: "",
+  password: "",
+  confirmPassword: "",
+  role: undefined,
+  restaurantId: undefined,
+};
+
 const CreateUserModal = ({ visible, onClose, onSubmit, loading, restaurants = [], restaurantsLoading = false }) => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    surname: "",
-    email: "",
-    username: "",
-    phone: "",
-    password: "",
-    role: "USER_ROLE",
-    restaurantId: null,
-  });
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm({ defaultValues, mode: "onChange" });
+
+  const selectedRole = watch("role");
 
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  // Si el usuario cambia de rol y ya no es RES_ADMIN_ROLE, limpiamos el restaurante seleccionado
+  // FIX: limpiamos el restaurante seleccionado si el rol deja de ser RES_ADMIN_ROLE
   useEffect(() => {
-    if (formData.role !== "RES_ADMIN_ROLE" && formData.restaurantId) {
-      setFormData((prev) => ({ ...prev, restaurantId: null }));
+    if (selectedRole !== "RES_ADMIN_ROLE") {
+      setValue("restaurantId", undefined);
     }
-  }, [formData.role]);
+  }, [selectedRole, setValue]);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // FIX: reseteamos el formulario solo cuando el modal se cierra (no al fallar el submit),
+  // así el usuario no pierde lo que escribió si hubo un error del servidor
+  useEffect(() => {
+    if (!visible) {
+      reset(defaultValues);
+      setPasswordVisible(false);
+      setConfirmPasswordVisible(false);
+    }
+  }, [visible, reset]);
 
-  const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const USERNAME_REGEX = /^\S+$/;
-  const PHONE_REGEX = /^[0-9]{8}$/;
-
-  const handleSubmit = () => {
-    const firstName = formData.firstName.trim();
-    const surname = formData.surname.trim();
-    const email = formData.email.trim();
-    const username = formData.username.trim();
-    const phone = formData.phone.trim();
-
-    if (!firstName) {
-      Alert.alert("Error", "El nombre es obligatorio");
-      return;
-    }
-    if (firstName.length < 2) {
-      Alert.alert("Error", "El nombre debe tener al menos 2 caracteres");
-      return;
-    }
-    if (!NAME_REGEX.test(firstName)) {
-      Alert.alert("Error", "El nombre solo puede contener letras");
-      return;
-    }
-    if (!surname) {
-      Alert.alert("Error", "El apellido es obligatorio");
-      return;
-    }
-    if (surname.length < 2) {
-      Alert.alert("Error", "El apellido debe tener al menos 2 caracteres");
-      return;
-    }
-    if (!NAME_REGEX.test(surname)) {
-      Alert.alert("Error", "El apellido solo puede contener letras");
-      return;
-    }
-    if (!email) {
-      Alert.alert("Error", "El email es obligatorio");
-      return;
-    }
-    if (!EMAIL_REGEX.test(email)) {
-      Alert.alert("Error", "Email inválido");
-      return;
-    }
-    if (!username) {
-      Alert.alert("Error", "El usuario es obligatorio");
-      return;
-    }
-    if (username.length < 3) {
-      Alert.alert("Error", "El usuario debe tener al menos 3 caracteres");
-      return;
-    }
-    if (!USERNAME_REGEX.test(username)) {
-      Alert.alert("Error", "El usuario no puede contener espacios");
-      return;
-    }
-    if (phone && !PHONE_REGEX.test(phone)) {
-      Alert.alert("Error", "El teléfono debe tener 8 dígitos");
-      return;
-    }
-    if (!formData.password.trim()) {
-      Alert.alert("Error", "La contraseña es obligatoria");
-      return;
-    }
-    if (formData.password.length < 6) {
-      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-    // FIX: un RES_ADMIN_ROLE siempre debe llevar un restaurante asignado
-    if (formData.role === "RES_ADMIN_ROLE" && !formData.restaurantId) {
-      Alert.alert("Error", "Debes seleccionar un restaurante para el Admin Restaurante");
-      return;
-    }
-
+  const submit = (values) => {
     const payload = {
-      ...formData,
-      firstName,
-      surname,
-      email,
-      username,
-      phone: phone || undefined,
+      firstName: values.firstName.trim(),
+      surname: values.surname.trim(),
+      email: values.email.trim(),
+      username: values.username.trim(),
+      phone: values.phone?.trim() || undefined,
+      password: values.password,
+      role: values.role,
+      ...(values.role === "RES_ADMIN_ROLE" && { restaurantId: values.restaurantId }),
     };
-
-    // Solo enviamos restaurantId cuando aplica; para el resto de roles lo omitimos
-    if (formData.role !== "RES_ADMIN_ROLE") {
-      delete payload.restaurantId;
-    }
-
     onSubmit(payload);
-    setFormData({
-      firstName: "",
-      surname: "",
-      email: "",
-      username: "",
-      phone: "",
-      password: "",
-      role: "USER_ROLE",
-      restaurantId: null,
-    });
-    setPasswordVisible(false);
   };
 
   return (
@@ -149,168 +78,252 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading, restaurants = []
       <View style={styles.overlay}>
         <Card style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>Crear Usuario</Text>
+            <View>
+              <Text style={styles.title}>Nuevo Usuario</Text>
+              <Text style={styles.subtitle}>Completa la información para registrar un nuevo usuario</Text>
+            </View>
             <TouchableOpacity onPress={onClose} disabled={loading}>
               <MaterialIcons name="close" size={24} color={COLORS.text} />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Nombre</Text>
-              <Input
-                placeholder="Ej: Juan"
-                value={formData.firstName}
-                onChangeText={(value) => handleChange("firstName", value)}
-                editable={!loading}
-              />
-            </View>
+            <Input
+              label="Nombre"
+              control={control}
+              name="firstName"
+              rules={{
+                required: "El nombre es obligatorio",
+                minLength: { value: 2, message: "Mínimo 2 caracteres" },
+                maxLength: { value: 50, message: "Máximo 50 caracteres" },
+                pattern: { value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, message: "Solo se permiten letras" },
+              }}
+              error={errors.firstName?.message}
+              placeholder="Ej: Juan"
+              autoCapitalize="words"
+              editable={!loading}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Apellido</Text>
-              <Input
-                placeholder="Ej: Pérez"
-                value={formData.surname}
-                onChangeText={(value) => handleChange("surname", value)}
-                editable={!loading}
-              />
-            </View>
+            <Input
+              label="Apellido"
+              control={control}
+              name="surname"
+              rules={{
+                required: "El apellido es obligatorio",
+                minLength: { value: 2, message: "Mínimo 2 caracteres" },
+                maxLength: { value: 50, message: "Máximo 50 caracteres" },
+                pattern: { value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, message: "Solo se permiten letras" },
+              }}
+              error={errors.surname?.message}
+              placeholder="Ej: Pérez"
+              autoCapitalize="words"
+              editable={!loading}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Email</Text>
-              <Input
-                placeholder="Ej: juan@email.com"
-                value={formData.email}
-                onChangeText={(value) => handleChange("email", value)}
-                editable={!loading}
-                keyboardType="email-address"
-              />
-            </View>
+            <Input
+              label="Correo electrónico"
+              control={control}
+              name="email"
+              rules={{
+                required: "El correo es obligatorio",
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Formato inválido" },
+              }}
+              error={errors.email?.message}
+              placeholder="Ej: juan@email.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!loading}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Usuario</Text>
-              <Input
-                placeholder="Ej: juanperez"
-                value={formData.username}
-                onChangeText={(value) => handleChange("username", value)}
-                editable={!loading}
-              />
-            </View>
+            <Input
+              label="Nombre de usuario"
+              control={control}
+              name="username"
+              rules={{
+                required: "El username es obligatorio",
+                minLength: { value: 3, message: "Mínimo 3 caracteres" },
+                maxLength: { value: 20, message: "Máximo 20 caracteres" },
+                pattern: { value: /^\S+$/, message: "El username no puede contener espacios" },
+              }}
+              error={errors.username?.message}
+              placeholder="Ej: juanperez"
+              autoCapitalize="none"
+              editable={!loading}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Teléfono</Text>
-              <Input
-                placeholder="Ej: 12345678"
-                value={formData.phone}
-                onChangeText={(value) => handleChange("phone", value)}
-                editable={!loading}
-                keyboardType="phone-pad"
-                maxLength={8}
-              />
-            </View>
+            <Input
+              label="Teléfono"
+              control={control}
+              name="phone"
+              rules={{
+                pattern: { value: /^[0-9]{8}$/, message: "El teléfono debe tener 8 dígitos" },
+              }}
+              error={errors.phone?.message}
+              placeholder="Ej: 12345678"
+              keyboardType="phone-pad"
+              maxLength={8}
+              editable={!loading}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Contraseña</Text>
-              <View style={styles.passwordInputContainer}>
-                <Input
-                  placeholder="Ej: Segura123!"
-                  value={formData.password}
-                  onChangeText={(value) => handleChange("password", value)}
-                  editable={!loading}
-                  secureTextEntry={!passwordVisible}
-                  style={{ flex: 1 }}
-                />
-                <TouchableOpacity
-                  onPress={() => setPasswordVisible(!passwordVisible)}
-                  style={styles.togglePasswordButton}
-                  disabled={loading}
-                >
-                  <MaterialIcons
-                    name={passwordVisible ? "visibility" : "visibility-off"}
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
+            {/* Rol */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Rol</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.rolesScroll}>
-                {ROLES.map((role) => (
-                  <TouchableOpacity
-                    key={role.value}
-                    style={[
-                      styles.roleButton,
-                      formData.role === role.value && styles.roleButtonSelected,
-                    ]}
-                    onPress={() => handleChange("role", role.value)}
-                    disabled={loading}
-                  >
-                    <Text
-                      style={[
-                        styles.roleButtonText,
-                        formData.role === role.value && styles.roleButtonTextSelected,
-                      ]}
-                    >
-                      {role.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <Controller
+                control={control}
+                name="role"
+                rules={{ required: "El rol es obligatorio" }}
+                render={({ field: { onChange, value } }) => (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.rolesScroll}>
+                    {ROLES.map((role) => (
+                      <TouchableOpacity
+                        key={role.value}
+                        style={[
+                          styles.roleButton,
+                          value === role.value && styles.roleButtonSelected,
+                          errors.role && !value && styles.roleButtonErrorBorder,
+                        ]}
+                        onPress={() => onChange(role.value)}
+                        disabled={loading}
+                      >
+                        <Text
+                          style={[
+                            styles.roleButtonText,
+                            value === role.value && styles.roleButtonTextSelected,
+                          ]}
+                        >
+                          {role.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              />
+              {errors.role && <Text style={styles.errorText}>{errors.role.message}</Text>}
             </View>
 
-            {/* FIX: selector de restaurante, solo visible para RES_ADMIN_ROLE */}
-            {formData.role === "RES_ADMIN_ROLE" && (
+            {/* Restaurante asignado, solo para RES_ADMIN_ROLE */}
+            {selectedRole === "RES_ADMIN_ROLE" && (
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Restaurante a administrar</Text>
+                <Text style={[styles.label, { color: "#a78bfa" }]}>Restaurante asignado</Text>
 
                 {restaurantsLoading ? (
                   <View style={styles.restaurantLoadingBox}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
                     <Text style={styles.restaurantLoadingText}>Cargando restaurantes...</Text>
                   </View>
-                ) : restaurants.length === 0 ? (
-                  <View style={styles.restaurantEmptyBox}>
-                    <MaterialIcons name="storefront" size={22} color={COLORS.textSecondary} />
-                    <Text style={styles.restaurantEmptyText}>
-                      No hay restaurantes disponibles sin administrador asignado
-                    </Text>
-                  </View>
                 ) : (
-                  <View style={styles.restaurantList}>
-                    {restaurants.map((restaurant) => (
-                      <TouchableOpacity
-                        key={restaurant._id}
-                        style={[
-                          styles.restaurantItem,
-                          formData.restaurantId === restaurant._id && styles.restaurantItemSelected,
-                        ]}
-                        onPress={() => handleChange("restaurantId", restaurant._id)}
-                        disabled={loading}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={[
-                              styles.restaurantName,
-                              formData.restaurantId === restaurant._id && styles.restaurantNameSelected,
-                            ]}
-                          >
-                            {restaurant.name}
-                          </Text>
-                          {!!restaurant.address && (
-                            <Text style={styles.restaurantAddress}>{restaurant.address}</Text>
-                          )}
-                        </View>
-                        {formData.restaurantId === restaurant._id && (
-                          <MaterialIcons name="check-circle" size={20} color={COLORS.primary} />
+                  <Controller
+                    control={control}
+                    name="restaurantId"
+                    rules={{ required: "Debes asignar un restaurante al RES_ADMIN_ROLE" }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={styles.restaurantBox}>
+                        {restaurants.length === 0 ? (
+                          <View style={styles.restaurantEmptyBox}>
+                            <MaterialIcons name="storefront" size={22} color={COLORS.textSecondary} />
+                            <Text style={styles.restaurantEmptyText}>
+                              No hay restaurantes disponibles sin administrador asignado
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={styles.restaurantList}>
+                            {restaurants.map((restaurant) => (
+                              <TouchableOpacity
+                                key={restaurant._id}
+                                style={[
+                                  styles.restaurantItem,
+                                  value === restaurant._id && styles.restaurantItemSelected,
+                                ]}
+                                onPress={() => onChange(restaurant._id)}
+                                disabled={loading}
+                              >
+                                <View style={{ flex: 1 }}>
+                                  <Text
+                                    style={[
+                                      styles.restaurantName,
+                                      value === restaurant._id && styles.restaurantNameSelected,
+                                    ]}
+                                  >
+                                    {restaurant.name}
+                                  </Text>
+                                  {!!restaurant.address && (
+                                    <Text style={styles.restaurantAddress}>{restaurant.address}</Text>
+                                  )}
+                                </View>
+                                {value === restaurant._id && (
+                                  <MaterialIcons name="check-circle" size={20} color={COLORS.primary} />
+                                )}
+                              </TouchableOpacity>
+                            ))}
+                          </View>
                         )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                      </View>
+                    )}
+                  />
                 )}
+                {errors.restaurantId && <Text style={styles.errorText}>{errors.restaurantId.message}</Text>}
               </View>
             )}
+
+            <View style={styles.passwordRow}>
+              <Input
+                label="Contraseña"
+                control={control}
+                name="password"
+                rules={{
+                  required: "La contraseña es obligatoria",
+                  minLength: { value: 8, message: "Mínimo 8 caracteres" },
+                  pattern: {
+                    value: /^(?=.*[A-Za-z])(?=.*\d).+$/,
+                    message: "Debe incluir al menos una letra y un número",
+                  },
+                }}
+                error={errors.password?.message}
+                placeholder="Ej: Segura123"
+                secureTextEntry={!passwordVisible}
+                editable={!loading}
+                style={{ flex: 1 }}
+              />
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+                style={styles.togglePasswordButton}
+                disabled={loading}
+              >
+                <MaterialIcons
+                  name={passwordVisible ? "visibility" : "visibility-off"}
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.passwordRow}>
+              <Input
+                label="Confirmar contraseña"
+                control={control}
+                name="confirmPassword"
+                rules={{
+                  required: "Confirma la contraseña",
+                  validate: (v) => v === getValues("password") || "Las contraseñas no coinciden",
+                }}
+                error={errors.confirmPassword?.message}
+                placeholder="Repite la contraseña"
+                secureTextEntry={!confirmPasswordVisible}
+                editable={!loading}
+                style={{ flex: 1 }}
+              />
+              <TouchableOpacity
+                onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                style={styles.togglePasswordButton}
+                disabled={loading}
+              >
+                <MaterialIcons
+                  name={confirmPasswordVisible ? "visibility" : "visibility-off"}
+                  size={20}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+            </View>
           </ScrollView>
 
           <View style={styles.actions}>
@@ -322,8 +335,8 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading, restaurants = []
               style={{ flex: 1 }}
             />
             <Button
-              title="Crear"
-              onPress={handleSubmit}
+              title={loading ? "Creando..." : "Crear"}
+              onPress={handleSubmit(submit)}
               loading={loading}
               disabled={loading}
               style={{ flex: 1, marginLeft: SPACING.md }}
@@ -349,7 +362,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
@@ -359,6 +372,12 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: FONT_SIZE.lg,
     fontWeight: "700",
+  },
+  subtitle: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.xs,
+    marginTop: SPACING.xs,
+    maxWidth: 260,
   },
   content: {
     padding: SPACING.lg,
@@ -372,12 +391,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: SPACING.sm,
   },
-  passwordInputContainer: {
+  passwordRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   togglePasswordButton: {
     paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.lg + 4,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -398,6 +418,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
+  roleButtonErrorBorder: {
+    borderColor: COLORS.error,
+  },
   roleButtonText: {
     color: COLORS.textSecondary,
     fontSize: FONT_SIZE.xs,
@@ -405,6 +428,14 @@ const styles = StyleSheet.create({
   },
   roleButtonTextSelected: {
     color: COLORS.text,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.xs,
+    marginTop: SPACING.xs,
+  },
+  restaurantBox: {
+    borderRadius: BORDER_RADIUS.lg,
   },
   restaurantList: {
     borderWidth: 1,
