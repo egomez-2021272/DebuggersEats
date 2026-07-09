@@ -1,7 +1,7 @@
 // client-user/src/features/admin/components/CreateUserModal.jsx
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from "../../../shared/constants/theme";
 import { Card } from "../../../shared/components/common/Common";
@@ -14,7 +14,7 @@ const ROLES = [
   { value: "USER_ROLE", label: "Usuario" },
 ];
 
-const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
+const CreateUserModal = ({ visible, onClose, onSubmit, loading, restaurants = [], restaurantsLoading = false }) => {
   const [formData, setFormData] = useState({
     firstName: "",
     surname: "",
@@ -23,9 +23,17 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
     phone: "",
     password: "",
     role: "USER_ROLE",
+    restaurantId: null,
   });
 
   const [passwordVisible, setPasswordVisible] = useState(false);
+
+  // Si el usuario cambia de rol y ya no es RES_ADMIN_ROLE, limpiamos el restaurante seleccionado
+  useEffect(() => {
+    if (formData.role !== "RES_ADMIN_ROLE" && formData.restaurantId) {
+      setFormData((prev) => ({ ...prev, restaurantId: null }));
+    }
+  }, [formData.role]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({
@@ -102,15 +110,27 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
       Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
       return;
     }
+    // FIX: un RES_ADMIN_ROLE siempre debe llevar un restaurante asignado
+    if (formData.role === "RES_ADMIN_ROLE" && !formData.restaurantId) {
+      Alert.alert("Error", "Debes seleccionar un restaurante para el Admin Restaurante");
+      return;
+    }
 
-    onSubmit({
+    const payload = {
       ...formData,
       firstName,
       surname,
       email,
       username,
       phone: phone || undefined,
-    });
+    };
+
+    // Solo enviamos restaurantId cuando aplica; para el resto de roles lo omitimos
+    if (formData.role !== "RES_ADMIN_ROLE") {
+      delete payload.restaurantId;
+    }
+
+    onSubmit(payload);
     setFormData({
       firstName: "",
       surname: "",
@@ -119,6 +139,7 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
       phone: "",
       password: "",
       role: "USER_ROLE",
+      restaurantId: null,
     });
     setPasswordVisible(false);
   };
@@ -238,6 +259,58 @@ const CreateUserModal = ({ visible, onClose, onSubmit, loading }) => {
                 ))}
               </ScrollView>
             </View>
+
+            {/* FIX: selector de restaurante, solo visible para RES_ADMIN_ROLE */}
+            {formData.role === "RES_ADMIN_ROLE" && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Restaurante a administrar</Text>
+
+                {restaurantsLoading ? (
+                  <View style={styles.restaurantLoadingBox}>
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                    <Text style={styles.restaurantLoadingText}>Cargando restaurantes...</Text>
+                  </View>
+                ) : restaurants.length === 0 ? (
+                  <View style={styles.restaurantEmptyBox}>
+                    <MaterialIcons name="storefront" size={22} color={COLORS.textSecondary} />
+                    <Text style={styles.restaurantEmptyText}>
+                      No hay restaurantes disponibles sin administrador asignado
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.restaurantList}>
+                    {restaurants.map((restaurant) => (
+                      <TouchableOpacity
+                        key={restaurant._id}
+                        style={[
+                          styles.restaurantItem,
+                          formData.restaurantId === restaurant._id && styles.restaurantItemSelected,
+                        ]}
+                        onPress={() => handleChange("restaurantId", restaurant._id)}
+                        disabled={loading}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.restaurantName,
+                              formData.restaurantId === restaurant._id && styles.restaurantNameSelected,
+                            ]}
+                          >
+                            {restaurant.name}
+                          </Text>
+                          {!!restaurant.address && (
+                            <Text style={styles.restaurantAddress}>{restaurant.address}</Text>
+                          )}
+                        </View>
+                        {formData.restaurantId === restaurant._id && (
+                          <MaterialIcons name="check-circle" size={20} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.actions}>
@@ -332,6 +405,63 @@ const styles = StyleSheet.create({
   },
   roleButtonTextSelected: {
     color: COLORS.text,
+  },
+  restaurantList: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.lg,
+    overflow: "hidden",
+  },
+  restaurantItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.background,
+  },
+  restaurantItemSelected: {
+    backgroundColor: "rgba(242,80,156,0.1)",
+  },
+  restaurantName: {
+    color: COLORS.text,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: "600",
+  },
+  restaurantNameSelected: {
+    color: COLORS.primary,
+  },
+  restaurantAddress: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.xs,
+    marginTop: 2,
+  },
+  restaurantLoadingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: SPACING.md,
+  },
+  restaurantLoadingText: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.sm,
+    marginLeft: SPACING.sm,
+  },
+  restaurantEmptyBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.background,
+  },
+  restaurantEmptyText: {
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.xs,
+    marginLeft: SPACING.sm,
+    flex: 1,
   },
   actions: {
     flexDirection: "row",

@@ -13,6 +13,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAdminUsers } from "../hooks/useAdminUsers";
+import { useAdminRestaurants } from "../hooks/useAdminRestaurants";
 import {
   COLORS,
   SPACING,
@@ -121,6 +122,11 @@ const AdminUsersScreen = () => {
   const insets = useSafeAreaInsets();
   const { users, loading, error, fetchAllUsers, toggleUserStatus, deleteUser, createUser } =
     useAdminUsers();
+  const {
+    restaurants,
+    loading: restaurantsLoading,
+    fetchAllRestaurants,
+  } = useAdminRestaurants();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [modalVisible, setModalVisible] = useState(false);
@@ -128,7 +134,11 @@ const AdminUsersScreen = () => {
 
   useEffect(() => {
     fetchAllUsers();
-  }, [fetchAllUsers]);
+    fetchAllRestaurants(); // FIX: cargamos restaurantes para poder asignarlos a un res-admin
+  }, [fetchAllUsers, fetchAllRestaurants]);
+
+  // FIX: solo restaurantes que aún no tienen administrador asignado
+  const availableRestaurants = restaurants.filter((r) => !r.assignedAdmin);
 
   const filteredUsers = users.filter((u) => {
     const q = search.trim().toLowerCase();
@@ -147,6 +157,9 @@ const AdminUsersScreen = () => {
     if (result.success) {
       Alert.alert("Éxito", "Usuario creado exitosamente");
       setModalVisible(false);
+      if (formData.role === "RES_ADMIN_ROLE") {
+        fetchAllRestaurants(); // FIX: refrescamos para que el restaurante ya no aparezca disponible
+      }
     } else {
       Alert.alert("Error", result.error || "No se pudo crear el usuario");
     }
@@ -224,6 +237,8 @@ const AdminUsersScreen = () => {
         onClose={() => setModalVisible(false)}
         onSubmit={handleCreateUser}
         loading={creating}
+        restaurants={availableRestaurants}
+        restaurantsLoading={restaurantsLoading}
       />
     </View>
   );
