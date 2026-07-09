@@ -57,13 +57,48 @@ export const useAdminRestaurants = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await restaurantClient.put(`/restaurants/${restaurantId}`, restaurantData);
+      const response = await restaurantClient.patch(`/restaurants/${restaurantId}`, restaurantData);
       const data = response.data.data || response.data;
       setRestaurants((prev) => prev.map((r) => (r._id === restaurantId ? data : r)));
       return { success: true, data };
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || "Error al actualizar restaurante");
       return { success: false, error: err.response?.data?.message || err.response?.data?.error };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // El PATCH /restaurants/:id no tiene multer y no procesa archivos, así que
+  // la foto de un restaurante ya existente se sube aparte con este endpoint.
+  // Se usa un timeout más largo porque subir una imagen a Cloudinary desde el
+  // celular puede tardar más que el timeout general de 8s del cliente.
+  const uploadRestaurantPhoto = useCallback(async (restaurantId, photo) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const formData = new FormData();
+      formData.append("photo", {
+        uri: photo.uri,
+        name: photo.name || "photo.jpg",
+        type: photo.type || "image/jpeg",
+      });
+      const response = await restaurantClient.post(`/restaurants/${restaurantId}/photo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30000,
+      });
+      const data = response.data.data || response.data;
+      setRestaurants((prev) => prev.map((r) => (r._id === restaurantId ? data : r)));
+      return { success: true, data };
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        (err.code === "ECONNABORTED"
+          ? "La subida de la foto tardó demasiado, intenta de nuevo"
+          : "Error al subir la foto del restaurante");
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     } finally {
       setLoading(false);
     }
@@ -77,5 +112,6 @@ export const useAdminRestaurants = () => {
     deleteRestaurant,
     createRestaurant,
     updateRestaurant,
+    uploadRestaurantPhoto,
   };
 };

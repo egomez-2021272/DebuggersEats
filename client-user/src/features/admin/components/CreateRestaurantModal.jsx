@@ -138,21 +138,44 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
       return;
     }
 
-    const payload = new FormData();
-    payload.append("name", values.name.trim());
-    payload.append("address", values.address.trim());
-    payload.append("phone", values.phone.trim());
-    payload.append("category", category);
-    payload.append("capacity", values.capacity);
-    payload.append("businessHoursOpen", values.businessHoursOpen);
-    payload.append("businessHoursClose", values.businessHoursClose);
-    payload.append("managerName", values.managerName.trim());
-    payload.append("contactEmail", values.contactEmail.trim());
-    if (photo) {
-      payload.append("photo", photo);
-    }
+    if (restaurant) {
+      // Edición: el endpoint PATCH /restaurants/:id espera JSON (no multipart),
+      // y la foto se sube aparte con POST /restaurants/:id/photo.
+      const payload = {
+        name: values.name.trim(),
+        address: values.address.trim(),
+        phone: values.phone.trim(),
+        category,
+        capacity: Number(values.capacity),
+        businessHours: {
+          open: values.businessHoursOpen,
+          close: values.businessHoursClose,
+        },
+        contactInfo: {
+          managerName: values.managerName.trim(),
+          email: values.contactEmail.trim(),
+        },
+      };
 
-    onSubmit(payload, restaurant?._id);
+      onSubmit(payload, restaurant._id, photo);
+    } else {
+      // Creación: el endpoint POST /restaurants sí acepta multipart/form-data
+      const payload = new FormData();
+      payload.append("name", values.name.trim());
+      payload.append("address", values.address.trim());
+      payload.append("phone", values.phone.trim());
+      payload.append("category", category);
+      payload.append("capacity", values.capacity);
+      payload.append("businessHoursOpen", values.businessHoursOpen);
+      payload.append("businessHoursClose", values.businessHoursClose);
+      payload.append("managerName", values.managerName.trim());
+      payload.append("contactEmail", values.contactEmail.trim());
+      if (photo) {
+        payload.append("photo", photo);
+      }
+
+      onSubmit(payload, null, null);
+    }
   };
 
   const handlePickPhoto = async () => {
@@ -172,7 +195,10 @@ const CreateRestaurantModal = ({ visible, restaurant = null, onClose, onSubmit, 
       const localUri = result.assets?.[0]?.uri || result.uri;
       const filename = localUri.split('/').pop();
       const match = filename?.match(/\.([0-9a-z]+)(?:[\?#]|$)/i);
-      const type = match ? `image/${match[1]}` : 'image';
+      // Algunas URIs de Android (content://...) no traen extensión en el nombre;
+      // el backend solo acepta image/jpeg, image/png, image/jpg, image/webp,
+      // así que un mimetype genérico como 'image' hace que lo rechace.
+      const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
 
       setPhoto({
         uri: localUri,
