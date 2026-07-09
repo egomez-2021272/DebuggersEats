@@ -16,7 +16,7 @@ const generateAccessToken = (user) => {
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: '15m',
+            expiresIn: '20s',
             issuer: process.env.JWT_ISSUER,
             audience: process.env.JWT_AUDIENCE,
         }
