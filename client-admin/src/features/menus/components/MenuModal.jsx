@@ -22,6 +22,9 @@ const DAYS = [
   { value: 'DOMINGO', label: 'D' },
 ];
 
+const fieldClass = (hasError, extra = '') =>
+  `dbe-input w-full px-3 py-2 text-sm ${hasError ? 'dbe-input-error' : ''} ${extra}`.trim();
+
 export const MenuModal = ({
   isOpen,
   onClose,
@@ -41,6 +44,7 @@ export const MenuModal = ({
   const [preview, setPreview] = useState(null);
   const { restaurants, getRestaurants } = useRestaurantStore();
   const [selectedDays, setSelectedDays] = useState([]);
+  const [daysError, setDaysError] = useState('');
 
   const userRestaurantId = useAuthStore((s) => s.user?.restaurantId);
   const isResAdmin = useAuthStore((s) => s.user?.role === 'RES_ADMIN_ROLE');
@@ -76,6 +80,7 @@ export const MenuModal = ({
       setPreview(null);
       setSelectedDays([]);
     }
+    setDaysError('');
   }, [isOpen, menu, reset]);
 
   useEffect(() => {
@@ -99,6 +104,12 @@ export const MenuModal = ({
   if (!isOpen) return null;
 
   const submit = async (data) => {
+    if (selectedDays.length === 0) {
+      setDaysError('Selecciona al menos un día disponible');
+      return;
+    }
+    setDaysError('');
+
     data['availability.days'] = selectedDays;
     data.restaurantId = effectiveRestaurantId || data.restaurantId;
     data.available = !!data.available;
@@ -106,14 +117,17 @@ export const MenuModal = ({
     if (ok) {
       reset();
       setPreview(null);
+      setSelectedDays([]);
       onClose();
     }
   };
 
   const toggleDay = (day) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
+    setSelectedDays((prev) => {
+      const next = prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day];
+      if (next.length > 0) setDaysError('');
+      return next;
+    });
   };
 
   return (
@@ -144,9 +158,10 @@ export const MenuModal = ({
               <input
                 {...register('name', {
                   required: 'El nombre es obligatorio',
+                  minLength: { value: 2, message: 'Mínimo 2 caracteres' },
                   maxLength: { value: 100, message: 'Máximo 100 caracteres' },
                 })}
-                className='dbe-input w-full px-3 py-2 text-sm'
+                className={fieldClass(errors.name)}
                 placeholder='Pizza Margherita'
               />
               {errors.name && <p className='dbe-error'>{errors.name.message}</p>}
@@ -156,11 +171,14 @@ export const MenuModal = ({
               <label className='dbe-label mb-1'>Descripción</label>
               <textarea
                 {...register('description', {
+                  required: 'La descripción es obligatoria',
+                  minLength: { value: 10, message: 'Mínimo 10 caracteres' },
                   maxLength: { value: 255, message: 'Máximo 255 caracteres' },
                 })}
                 rows={2}
-                className='dbe-input w-full px-3 py-2 text-sm resize-none'
+                className={fieldClass(errors.description, 'resize-none')}
               />
+              {errors.description && <p className='dbe-error'>{errors.description.message}</p>}
             </div>
 
             <div>
@@ -168,11 +186,12 @@ export const MenuModal = ({
               <input
                 {...register('price', {
                   required: 'El precio es obligatorio',
-                  min: { value: 0, message: 'No negativo' },
+                  min: { value: 0.01, message: 'El precio debe ser mayor a 0' },
+                  max: { value: 5000, message: 'Precio demasiado alto' },
                 })}
                 type='number'
                 step='0.01'
-                className='dbe-input w-full px-3 py-2 text-sm'
+                className={fieldClass(errors.price)}
               />
               {errors.price && <p className='dbe-error'>{errors.price.message}</p>}
             </div>
@@ -181,7 +200,7 @@ export const MenuModal = ({
               <label className='dbe-label mb-1'>Categoría</label>
               <select
                 {...register('category', { required: 'La categoría es obligatoria' })}
-                className='dbe-input w-full px-3 py-2 text-sm cursor-pointer'
+                className={fieldClass(errors.category, 'cursor-pointer')}
                 style={{ colorScheme: 'dark' }}
               >
                 <option value='' className='bg-[#1a1a2e]'>Seleccione una categoría</option>
@@ -195,10 +214,14 @@ export const MenuModal = ({
             <div className='md:col-span-2'>
               <label className='dbe-label mb-1'>Ingredientes</label>
               <input
-                {...register('ingredients')}
-                className='dbe-input w-full px-3 py-2 text-sm'
+                {...register('ingredients', {
+                  required: 'Ingresa al menos un ingrediente',
+                  maxLength: { value: 200, message: 'Máximo 200 caracteres' },
+                })}
+                className={fieldClass(errors.ingredients)}
                 placeholder='queso, tomate...'
               />
+              {errors.ingredients && <p className='dbe-error'>{errors.ingredients.message}</p>}
             </div>
 
             {menu && (
@@ -225,12 +248,16 @@ export const MenuModal = ({
                       onChange={() => toggleDay(day.value)}
                       className='sr-only peer'
                     />
-                    <span className='w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold border border-white/10 bg-white/5 text-white/40 peer-checked:bg-pink-500/20 peer-checked:border-pink-500/50 peer-checked:text-pink-400 transition'>
+                    <span
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold border bg-white/5 text-white/40 peer-checked:bg-pink-500/20 peer-checked:border-pink-500/50 peer-checked:text-pink-400 transition ${daysError ? 'border-[#f2509c]' : 'border-white/10'
+                        }`}
+                    >
                       {day.label}
                     </span>
                   </label>
                 ))}
               </div>
+              {daysError && <p className='dbe-error'>{daysError}</p>}
             </div>
 
             <div className='md:col-span-2'>
@@ -248,7 +275,7 @@ export const MenuModal = ({
                 <label className='dbe-label mb-1'>Restaurante</label>
                 <select
                   {...register('restaurantId', { required: 'Selecciona un restaurante' })}
-                  className='dbe-input w-full px-3 py-2 text-sm cursor-pointer'
+                  className={fieldClass(errors.restaurantId, 'cursor-pointer')}
                   style={{ colorScheme: 'dark' }}
                 >
                   <option value='' className='bg-[#1a1a2e]'>Seleccione un restaurante</option>
@@ -269,6 +296,8 @@ export const MenuModal = ({
               onClick={() => {
                 reset();
                 setPreview(null);
+                setSelectedDays([]);
+                setDaysError('');
                 onClose();
               }}
               className='px-4 py-2 rounded-lg text-sm bg-white/10 text-white/60 hover:bg-white/20 transition'

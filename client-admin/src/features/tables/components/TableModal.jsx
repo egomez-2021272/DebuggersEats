@@ -2,6 +2,29 @@ import { useState } from 'react';
 
 const LOCATIONS = ['Interior', 'Terraza', 'Ventana', 'Jardín', 'Otro'];
 
+const EMPTY_ERRORS = { tableNumber: '', capacity: '' };
+
+// Mismo criterio de validación que MenuModal / CreateUserModal
+const validateForm = (form) => {
+  const errors = { ...EMPTY_ERRORS };
+
+  const tableNumber = form.tableNumber.trim();
+  if (!tableNumber) errors.tableNumber = 'El número o nombre de la mesa es obligatorio';
+  else if (tableNumber.length > 20) errors.tableNumber = 'Máximo 20 caracteres';
+
+  const capacity = Number(form.capacity);
+  if (!form.capacity) errors.capacity = 'La capacidad es obligatoria';
+  else if (Number.isNaN(capacity) || capacity < 1 || capacity > 20)
+    errors.capacity = 'La capacidad debe estar entre 1 y 20 personas';
+
+  return errors;
+};
+
+const hasErrors = (errors) => Object.values(errors).some((msg) => msg);
+
+// Helper: arma la clase del input agregando el borde rosa de error
+const fieldClass = (hasError) => `dbe-input w-full px-3 py-2 text-sm ${hasError ? 'dbe-input-error' : ''}`.trim();
+
 export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => {
   const isEdit = Boolean(table?._id);
 
@@ -15,14 +38,24 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
     };
   });
 
-  const [error, setError] = useState('');
-  const setF = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+  const [fieldErrors, setFieldErrors] = useState(EMPTY_ERRORS);
+  const [serverError, setServerError] = useState('');
+
+  const setF = (key, val) => {
+    setForm((f) => ({ ...f, [key]: val }));
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => ({ ...prev, [key]: '' }));
+    }
+  };
 
   const handleSubmit = async () => {
-    setError('');
-    if (!form.tableNumber.trim()) return setError('El número o nombre de la mesa es requerido.');
-    if (!form.capacity || form.capacity < 1 || form.capacity > 20)
-      return setError('La capacidad debe estar entre 1 y 20 personas.');
+    setServerError('');
+    const errors = validateForm(form);
+    if (hasErrors(errors)) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors(EMPTY_ERRORS);
 
     const payload = {
       restaurantId: form.restaurantId,
@@ -32,7 +65,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
     };
 
     const res = await onSave(payload, isEdit ? table._id : null);
-    if (!res?.success) setError(res?.error || 'Error al guardar');
+    if (!res?.success) setServerError(res?.error || 'Error al guardar');
   };
 
   return (
@@ -98,15 +131,19 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
             Número / Nombre <span style={{ color: 'var(--dbe-pink)' }}>*</span>
           </label>
           <input
-            className='dbe-input w-full px-3 py-2 text-sm'
+            className={fieldClass(fieldErrors.tableNumber)}
             value={form.tableNumber}
             onChange={(e) => setF('tableNumber', e.target.value)}
             placeholder='Ej. Mesa 5, VIP-1, Terraza-A'
             maxLength={20}
           />
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '4px 0 0' }}>
-            Máx. 20 caracteres · {form.tableNumber.length}/20
-          </p>
+          {fieldErrors.tableNumber ? (
+            <p className='dbe-error'>{fieldErrors.tableNumber}</p>
+          ) : (
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '4px 0 0' }}>
+              Máx. 20 caracteres · {form.tableNumber.length}/20
+            </p>
+          )}
         </div>
 
         {/* Capacidad */}
@@ -118,13 +155,17 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
             type='number'
             min={1}
             max={20}
-            className='dbe-input w-full px-3 py-2 text-sm'
+            className={fieldClass(fieldErrors.capacity)}
             value={form.capacity}
             onChange={(e) => setF('capacity', e.target.value)}
           />
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '4px 0 0' }}>
-            Entre 1 y 20 personas
-          </p>
+          {fieldErrors.capacity ? (
+            <p className='dbe-error'>{fieldErrors.capacity}</p>
+          ) : (
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '4px 0 0' }}>
+              Entre 1 y 20 personas
+            </p>
+          )}
         </div>
 
         {/* Ubicación */}
@@ -158,8 +199,8 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
+        {/* Error del servidor */}
+        {serverError && (
           <p
             className='dbe-error'
             style={{
@@ -171,7 +212,7 @@ export const TableModal = ({ table, restaurantId, onSave, onClose, saving }) => 
               fontSize: 13,
             }}
           >
-            {error}
+            {serverError}
           </p>
         )}
 
