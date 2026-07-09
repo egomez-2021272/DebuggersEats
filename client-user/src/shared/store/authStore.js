@@ -44,6 +44,22 @@ export const useAuthStore = create(
         });
       },
 
+      // Usado por el interceptor de refresh: actualiza accessToken y,
+      // si el backend rotó el refreshToken, también lo persiste en SecureStore.
+      setTokens: async (accessToken, refreshToken) => {
+        try {
+          if (refreshToken && refreshToken !== get().refreshToken) {
+            await SecureStore.setItemAsync("dbe_refresh_token", refreshToken);
+          }
+        } catch (error) {
+          console.error("Error storing refresh token:", error);
+        }
+        set((state) => ({
+          token: accessToken,
+          refreshToken: refreshToken || state.refreshToken,
+        }));
+      },
+
       setAccessToken: (token) => {
         set({ token });
       },

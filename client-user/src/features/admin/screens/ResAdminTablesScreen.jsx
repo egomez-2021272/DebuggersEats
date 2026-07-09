@@ -17,6 +17,26 @@ import { useResAdminTables } from "../hooks/useResAdminTables";
 
 const LOCATIONS = ["Interior", "Terraza", "Ventana", "Jardín", "Otro"];
 
+const EMPTY_ERRORS = { tableNumber: "", capacity: "" };
+
+// Mismo criterio de validación que ResAdminMenuScreen / client-admin TableModal
+const validateForm = (formData) => {
+  const errors = { ...EMPTY_ERRORS };
+
+  const tableNumber = formData.tableNumber.trim();
+  if (!tableNumber) errors.tableNumber = "El número o nombre de la mesa es obligatorio";
+  else if (tableNumber.length > 20) errors.tableNumber = "Máximo 20 caracteres";
+
+  const capacity = parseInt(formData.capacity);
+  if (!formData.capacity) errors.capacity = "La capacidad es obligatoria";
+  else if (Number.isNaN(capacity) || capacity < 1 || capacity > 20)
+    errors.capacity = "La capacidad debe estar entre 1 y 20 personas";
+
+  return errors;
+};
+
+const hasErrors = (errors) => Object.values(errors).some((msg) => msg);
+
 const ResAdminTablesScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -28,6 +48,7 @@ const ResAdminTablesScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTable, setEditingTable] = useState(null);
   const [formData, setFormData] = useState({ tableNumber: "", capacity: "2", location: "Interior" });
+  const [formErrors, setFormErrors] = useState(EMPTY_ERRORS);
 
   useEffect(() => {
     fetchTables();
@@ -35,7 +56,16 @@ const ResAdminTablesScreen = () => {
     return unsubscribe;
   }, [navigation, fetchTables]);
 
+  // Actualiza un campo del form y limpia su error en cuanto el usuario escribe
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
   const handleOpenModal = (table = null) => {
+    setFormErrors(EMPTY_ERRORS);
     if (table) {
       setEditingTable(table);
       setFormData({
@@ -54,22 +84,20 @@ const ResAdminTablesScreen = () => {
     setModalVisible(false);
     setEditingTable(null);
     setFormData({ tableNumber: "", capacity: "2", location: "Interior" });
+    setFormErrors(EMPTY_ERRORS);
   };
 
   const handleSubmit = async () => {
-    if (!formData.tableNumber.trim()) {
-      Alert.alert("Error", "El número o nombre de la mesa es requerido");
+    const errors = validateForm(formData);
+    if (hasErrors(errors)) {
+      setFormErrors(errors);
       return;
     }
-    const cap = parseInt(formData.capacity);
-    if (!cap || cap < 1 || cap > 20) {
-      Alert.alert("Error", "La capacidad debe estar entre 1 y 20 personas");
-      return;
-    }
+    setFormErrors(EMPTY_ERRORS);
 
     const payload = {
       tableNumber: formData.tableNumber.trim(),
-      capacity: cap,
+      capacity: parseInt(formData.capacity),
       location: formData.location || undefined,
       isActive: true,
     };
@@ -225,27 +253,35 @@ const ResAdminTablesScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Número / Nombre *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, formErrors.tableNumber && styles.inputError]}
                   placeholder="Ej. Mesa 5, VIP-1, Terraza-A"
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.tableNumber}
-                  onChangeText={(text) => setFormData({ ...formData, tableNumber: text })}
+                  onChangeText={(text) => updateField("tableNumber", text)}
                   maxLength={20}
                 />
-                <Text style={styles.hint}>Máx. 20 caracteres {"\u00B7"} {formData.tableNumber.length}/20</Text>
+                {formErrors.tableNumber ? (
+                  <Text style={styles.errorText}>{formErrors.tableNumber}</Text>
+                ) : (
+                  <Text style={styles.hint}>Máx. 20 caracteres {"\u00B7"} {formData.tableNumber.length}/20</Text>
+                )}
               </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Capacidad *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, formErrors.capacity && styles.inputError]}
                   placeholder="Número de personas (1-20)"
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.capacity}
-                  onChangeText={(text) => setFormData({ ...formData, capacity: text })}
+                  onChangeText={(text) => updateField("capacity", text)}
                   keyboardType="numeric"
                 />
-                <Text style={styles.hint}>Entre 1 y 20 personas</Text>
+                {formErrors.capacity ? (
+                  <Text style={styles.errorText}>{formErrors.capacity}</Text>
+                ) : (
+                  <Text style={styles.hint}>Entre 1 y 20 personas</Text>
+                )}
               </View>
 
               <View style={styles.formGroup}>
@@ -345,6 +381,9 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md,
     color: COLORS.text, fontSize: FONT_SIZE.md,
   },
+  // Estado de error, consistente con dbe-input-error de client-admin
+  inputError: { borderColor: COLORS.error, borderWidth: 1.5 },
+  errorText: { color: COLORS.error, fontSize: FONT_SIZE.xs, marginTop: 4 },
   chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm },
   chip: {
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,

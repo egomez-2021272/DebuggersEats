@@ -45,6 +45,50 @@ const EMPTY_FORM = {
   photo: null, // { uri, name, type }
 };
 
+const EMPTY_ERRORS = {
+  name: "",
+  description: "",
+  price: "",
+  category: "",
+  ingredients: "",
+  availabilityDays: "",
+};
+
+// Reglas alineadas con las de client-admin (MenuModal.jsx) para mantener
+// el mismo criterio de validación entre plataformas.
+const validateForm = (formData) => {
+  const errors = { ...EMPTY_ERRORS };
+
+  const name = formData.name.trim();
+  if (!name) errors.name = "El nombre es obligatorio";
+  else if (name.length < 2) errors.name = "Mínimo 2 caracteres";
+  else if (name.length > 100) errors.name = "Máximo 100 caracteres";
+
+  const description = formData.description.trim();
+  if (!description) errors.description = "La descripción es obligatoria";
+  else if (description.length < 10) errors.description = "Mínimo 10 caracteres";
+  else if (description.length > 255) errors.description = "Máximo 255 caracteres";
+
+  const price = parseFloat(formData.price);
+  if (!formData.price) errors.price = "El precio es obligatorio";
+  else if (Number.isNaN(price) || price <= 0) errors.price = "El precio debe ser mayor a 0";
+  else if (price > 5000) errors.price = "Precio demasiado alto";
+
+  if (!formData.category) errors.category = "La categoría es obligatoria";
+
+  const ingredients = formData.ingredients.trim();
+  if (!ingredients) errors.ingredients = "Ingresa al menos un ingrediente";
+  else if (ingredients.length > 200) errors.ingredients = "Máximo 200 caracteres";
+
+  if (formData.availabilityDays.length === 0) {
+    errors.availabilityDays = "Selecciona al menos un día disponible";
+  }
+
+  return errors;
+};
+
+const hasErrors = (errors) => Object.values(errors).some((msg) => msg);
+
 const ResAdminMenuScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -56,12 +100,21 @@ const ResAdminMenuScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [formErrors, setFormErrors] = useState(EMPTY_ERRORS);
 
   useEffect(() => {
     fetchMenuItems();
     const unsubscribe = navigation.addListener("focus", () => fetchMenuItems());
     return unsubscribe;
   }, [navigation, fetchMenuItems]);
+
+  // Actualiza un campo del form y limpia su error en cuanto el usuario escribe
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
   const toggleDay = (day) => {
     setFormData((prev) => ({
@@ -70,6 +123,9 @@ const ResAdminMenuScreen = () => {
         ? prev.availabilityDays.filter((d) => d !== day)
         : [...prev.availabilityDays, day],
     }));
+    if (formErrors.availabilityDays) {
+      setFormErrors((prev) => ({ ...prev, availabilityDays: "" }));
+    }
   };
 
   const handlePickImage = async () => {
@@ -97,6 +153,7 @@ const ResAdminMenuScreen = () => {
   };
 
   const handleOpenModal = (item = null) => {
+    setFormErrors(EMPTY_ERRORS);
     if (item) {
       setEditingItem(item);
       setFormData({
@@ -122,13 +179,16 @@ const ResAdminMenuScreen = () => {
     setModalVisible(false);
     setEditingItem(null);
     setFormData(EMPTY_FORM);
+    setFormErrors(EMPTY_ERRORS);
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.price || !formData.category) {
-      Alert.alert("Error", "Nombre, precio y categoría son obligatorios");
+    const errors = validateForm(formData);
+    if (hasErrors(errors)) {
+      setFormErrors(errors);
       return;
     }
+    setFormErrors(EMPTY_ERRORS);
 
     const payload = {
       name: formData.name.trim(),
@@ -327,37 +387,40 @@ const ResAdminMenuScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Nombre *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, formErrors.name && styles.inputError]}
                   placeholder="Nombre del platillo"
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  onChangeText={(text) => updateField("name", text)}
                 />
+                {formErrors.name ? <Text style={styles.errorText}>{formErrors.name}</Text> : null}
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Descripción</Text>
+                <Text style={styles.label}>Descripción *</Text>
                 <TextInput
-                  style={[styles.input, styles.textarea]}
+                  style={[styles.input, styles.textarea, formErrors.description && styles.inputError]}
                   placeholder="Descripción del platillo"
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.description}
-                  onChangeText={(text) => setFormData({ ...formData, description: text })}
+                  onChangeText={(text) => updateField("description", text)}
                   multiline
                   numberOfLines={3}
                 />
+                {formErrors.description ? <Text style={styles.errorText}>{formErrors.description}</Text> : null}
               </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Precio *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, formErrors.price && styles.inputError]}
                   placeholder="0.00"
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.price}
-                  onChangeText={(text) => setFormData({ ...formData, price: text })}
+                  onChangeText={(text) => updateField("price", text)}
                   keyboardType="decimal-pad"
                 />
+                {formErrors.price ? <Text style={styles.errorText}>{formErrors.price}</Text> : null}
               </View>
 
               <View style={styles.formGroup}>
@@ -366,8 +429,12 @@ const ResAdminMenuScreen = () => {
                   {CATEGORIES.map((cat) => (
                     <TouchableOpacity
                       key={cat.value}
-                      style={[styles.chip, formData.category === cat.value && styles.chipSelected]}
-                      onPress={() => setFormData({ ...formData, category: cat.value })}
+                      style={[
+                        styles.chip,
+                        formData.category === cat.value && styles.chipSelected,
+                        formErrors.category && styles.chipError,
+                      ]}
+                      onPress={() => updateField("category", cat.value)}
                     >
                       <Text style={[styles.chipText, formData.category === cat.value && styles.chipTextSelected]}>
                         {cat.label}
@@ -375,37 +442,36 @@ const ResAdminMenuScreen = () => {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+                {formErrors.category ? <Text style={styles.errorText}>{formErrors.category}</Text> : null}
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Ingredientes</Text>
+                <Text style={styles.label}>Ingredientes *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, formErrors.ingredients && styles.inputError]}
                   placeholder="queso, tomate, albahaca..."
                   placeholderTextColor={COLORS.textMuted}
                   value={formData.ingredients}
-                  onChangeText={(text) => setFormData({ ...formData, ingredients: text })}
+                  onChangeText={(text) => updateField("ingredients", text)}
                 />
-                <Text style={styles.hint}>Separados por coma</Text>
-              </View>
-
-              <View style={[styles.formGroup, styles.switchRow]}>
-                <Text style={styles.label}>Platillo disponible</Text>
-                <Switch
-                  value={formData.available}
-                  onValueChange={(val) => setFormData({ ...formData, available: val })}
-                  trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                  thumbColor={COLORS.white}
-                />
+                {formErrors.ingredients ? (
+                  <Text style={styles.errorText}>{formErrors.ingredients}</Text>
+                ) : (
+                  <Text style={styles.hint}>Separados por coma</Text>
+                )}
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Días disponibles</Text>
+                <Text style={styles.label}>Días disponibles *</Text>
                 <View style={styles.daysSelector}>
                   {DAYS.map((day) => (
                     <TouchableOpacity
                       key={day.value}
-                      style={[styles.dayBtn, formData.availabilityDays.includes(day.value) && styles.dayBtnSelected]}
+                      style={[
+                        styles.dayBtn,
+                        formData.availabilityDays.includes(day.value) && styles.dayBtnSelected,
+                        formErrors.availabilityDays && styles.dayBtnError,
+                      ]}
                       onPress={() => toggleDay(day.value)}
                     >
                       <Text style={[styles.dayBtnText, formData.availabilityDays.includes(day.value) && styles.dayBtnTextSelected]}>
@@ -414,6 +480,9 @@ const ResAdminMenuScreen = () => {
                     </TouchableOpacity>
                   ))}
                 </View>
+                {formErrors.availabilityDays ? (
+                  <Text style={styles.errorText}>{formErrors.availabilityDays}</Text>
+                ) : null}
               </View>
 
             </ScrollView>
@@ -511,6 +580,9 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md,
     color: COLORS.text, fontSize: FONT_SIZE.md,
   },
+  // Estado de error, consistente con dbe-input-error de client-admin (mismo color rosa)
+  inputError: { borderColor: COLORS.error, borderWidth: 1.5 },
+  errorText: { color: COLORS.error, fontSize: FONT_SIZE.xs, marginTop: 4 },
   textarea: { minHeight: 80, paddingTop: SPACING.md, textAlignVertical: "top" },
   chipsRow: { flexDirection: "row" },
   chip: {
@@ -519,6 +591,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background,
   },
   chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipError: { borderColor: COLORS.error },
   chipText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, fontWeight: "500" },
   chipTextSelected: { color: COLORS.white },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -529,6 +602,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background,
   },
   dayBtnSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  dayBtnError: { borderColor: COLORS.error },
   dayBtnText: { color: COLORS.textMuted, fontSize: FONT_SIZE.sm, fontWeight: "700" },
   dayBtnTextSelected: { color: COLORS.white },
   // Image picker
