@@ -46,6 +46,13 @@ const CreateReservationScreen = () => {
   const [availability, setAvailability] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
+  // FIX: errores de validación en línea (borde rosa) en lugar de Alert.alert
+  const [formErrors, setFormErrors] = useState({
+    restaurant: null,
+    date: null,
+    table: null,
+  });
+
   const {
     control,
     handleSubmit,
@@ -105,6 +112,7 @@ const CreateReservationScreen = () => {
       setAvailability(null);
       setTables([]);
       setSelectedTable("");
+      setFormErrors((prev) => ({ ...prev, date: null }));
     }
   };
 
@@ -121,9 +129,14 @@ const CreateReservationScreen = () => {
     }
   };
 
+  // FIX: valida en línea (sin Alert) antes de consultar disponibilidad
   const handleCheckAvailability = async () => {
-    if (!selectedRestaurant || !selectedDate || !selectedTime) {
-      Alert.alert("Campos requeridos", "Selecciona restaurante, fecha y hora");
+    const nextErrors = { restaurant: null, date: null };
+    if (!selectedRestaurant) nextErrors.restaurant = "Selecciona un restaurante para continuar";
+    if (!selectedDate) nextErrors.date = "Selecciona una fecha para continuar";
+
+    if (nextErrors.restaurant || nextErrors.date) {
+      setFormErrors((prev) => ({ ...prev, ...nextErrors }));
       return;
     }
 
@@ -153,20 +166,20 @@ const CreateReservationScreen = () => {
     }
   };
 
-  // FIX #3: onSubmit limpio — sin lógica de token ni navegación a ConfirmToken
+  // FIX: onSubmit ahora valida restaurante/fecha/mesa en línea (borde rosa)
+  // en lugar de mostrar Alert.alert nativo. Se mantiene el Alert solo para
+  // el resultado final (éxito o error del backend).
   const onSubmit = async (data) => {
-    if (!selectedRestaurant) {
-      Alert.alert("Restaurante requerido", "Selecciona un restaurante para continuar");
+    const nextErrors = { restaurant: null, date: null, table: null };
+    if (!selectedRestaurant) nextErrors.restaurant = "Selecciona un restaurante para continuar";
+    if (!data.reservationDate) nextErrors.date = "Selecciona una fecha para continuar";
+    if (!selectedTable) nextErrors.table = "Verifica disponibilidad y selecciona una mesa para continuar";
+
+    if (nextErrors.restaurant || nextErrors.date || nextErrors.table) {
+      setFormErrors(nextErrors);
       return;
     }
-    if (!data.reservationDate) {
-      Alert.alert("Fecha requerida", "Selecciona una fecha para continuar");
-      return;
-    }
-    if (!selectedTable) {
-      Alert.alert("Mesa requerida", "Verifica disponibilidad y selecciona una mesa para continuar");
-      return;
-    }
+    setFormErrors({ restaurant: null, date: null, table: null });
 
     try {
       await createReservation({
@@ -185,7 +198,8 @@ const CreateReservationScreen = () => {
         [
           {
             text: "OK",
-            onPress: () => navigation.navigate("ReservationsList"),
+            onPress: () =>
+              navigation.navigate("Reservaciones", { screen: "ReservationsList" }),
           },
         ]
       );
@@ -212,34 +226,45 @@ const CreateReservationScreen = () => {
         {!paramRestaurantId && (
           <View style={styles.section}>
             <Text style={styles.label}>Restaurante</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-              {restaurants.map((restaurant) => (
-                <TouchableOpacity
-                  key={restaurant._id}
-                  style={[
-                    styles.chip,
-                    selectedRestaurant === restaurant.name && styles.chipSelected,
-                  ]}
-                  onPress={() => {
-                    setSelectedRestaurant(restaurant.name);
-                    setSelectedRestaurantId(restaurant._id);
-                    setValue("restaurantName", restaurant.name);
-                    setAvailability(null);
-                    setTables([]);
-                    setSelectedTable("");
-                  }}
-                >
-                  <Text
+            <View
+              style={[
+                styles.selectorWrapper,
+                formErrors.restaurant && styles.selectorWrapperError,
+              ]}
+            >
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
+                {restaurants.map((restaurant) => (
+                  <TouchableOpacity
+                    key={restaurant._id}
                     style={[
-                      styles.chipText,
-                      selectedRestaurant === restaurant.name && styles.chipTextSelected,
+                      styles.chip,
+                      selectedRestaurant === restaurant.name && styles.chipSelected,
                     ]}
+                    onPress={() => {
+                      setSelectedRestaurant(restaurant.name);
+                      setSelectedRestaurantId(restaurant._id);
+                      setValue("restaurantName", restaurant.name);
+                      setAvailability(null);
+                      setTables([]);
+                      setSelectedTable("");
+                      setFormErrors((prev) => ({ ...prev, restaurant: null }));
+                    }}
                   >
-                    {restaurant.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedRestaurant === restaurant.name && styles.chipTextSelected,
+                      ]}
+                    >
+                      {restaurant.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            {formErrors.restaurant && (
+              <Text style={styles.fieldErrorText}>{formErrors.restaurant}</Text>
+            )}
           </View>
         )}
 
@@ -256,11 +281,17 @@ const CreateReservationScreen = () => {
         {/* Date Picker */}
         <View style={styles.section}>
           <Text style={styles.label}>Fecha de reservación</Text>
-          <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
+          <TouchableOpacity
+            style={[styles.pickerButton, formErrors.date && styles.pickerButtonError]}
+            onPress={() => setShowDatePicker(true)}
+          >
             <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
             <Text style={styles.pickerButtonText}>{formattedDate}</Text>
             <MaterialIcons name="arrow-drop-down" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
+          {formErrors.date && (
+            <Text style={styles.fieldErrorText}>{formErrors.date}</Text>
+          )}
           {showDatePicker && (
             <DateTimePicker
               value={selectedDate}
@@ -332,12 +363,20 @@ const CreateReservationScreen = () => {
         {availability?.disponible && tables.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Seleccionar mesa</Text>
-            <View style={styles.tablesGrid}>
+            <View
+              style={[
+                styles.tablesGrid,
+                formErrors.table && styles.tablesGridError,
+              ]}
+            >
               {tables.map((table) => (
                 <TouchableOpacity
                   key={table._id}
                   style={[styles.tableCard, selectedTable === table._id && styles.tableCardSelected]}
-                  onPress={() => setSelectedTable(table._id)}
+                  onPress={() => {
+                    setSelectedTable(table._id);
+                    setFormErrors((prev) => ({ ...prev, table: null }));
+                  }}
                 >
                   <Text
                     style={[
@@ -348,11 +387,14 @@ const CreateReservationScreen = () => {
                     Mesa {table.tableNumber}
                   </Text>
                   <Text style={styles.tableInfo}>
-                    👥 {table.capacity} · {table.location || "Interior"}
+                    👥 {table.capacity}{" \u00B7 "}{table.location || "Interior"}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+            {formErrors.table && (
+              <Text style={styles.fieldErrorText}>{formErrors.table}</Text>
+            )}
           </View>
         )}
 
@@ -404,6 +446,18 @@ const styles = StyleSheet.create({
   section: { marginBottom: SPACING.lg },
   label: { color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, marginBottom: SPACING.sm, fontWeight: "500" },
   chipsContainer: { flexDirection: "row" },
+  selectorWrapper: { borderRadius: BORDER_RADIUS.md },
+  selectorWrapperError: {
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.xs,
+  },
+  fieldErrorText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.xs,
+    marginTop: SPACING.xs,
+  },
   chip: {
     backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.md,
@@ -439,6 +493,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  pickerButtonError: { borderColor: COLORS.error },
   pickerButtonText: { color: COLORS.text, fontSize: FONT_SIZE.md, flex: 1, marginLeft: SPACING.sm },
   checkButton: { marginBottom: SPACING.lg },
   availabilityCard: {
@@ -453,6 +508,12 @@ const styles = StyleSheet.create({
   availabilityText: { color: COLORS.text, fontSize: FONT_SIZE.sm, fontWeight: "600" },
   availabilitySubtext: { color: COLORS.textSecondary, fontSize: FONT_SIZE.xs, marginTop: 2 },
   tablesGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm },
+  tablesGridError: {
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+  },
   tableCard: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,

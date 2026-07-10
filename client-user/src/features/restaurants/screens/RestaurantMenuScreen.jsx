@@ -219,10 +219,9 @@ const RestaurantMenuScreen = () => {
       <View
         style={[
           styles.categoriesContainer,
-          // paddingTop extra si el header no absorbe el inset (headerShown:false)
-          // Con headerShown:true (este stack sí lo muestra) el inset ya está cubierto,
-          // pero dejamos un mínimo para que no quede pegado al borde del header.
-          { paddingTop: SPACING.sm },
+          // El stack de Restaurantes usa headerShown:false, así que el inset
+          // superior no lo absorbe ningún header nativo. Lo aplicamos aquí.
+          { paddingTop: insets.top + SPACING.sm },
         ]}
       >
         <ScrollView
