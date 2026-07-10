@@ -70,6 +70,8 @@ const ProfileScreen = () => {
     defaultValues: {
       firstName: user?.firstName || "",
       surname: user?.surname || "",
+      email: user?.email || "",
+      username: user?.username || "",
       phone: user?.phone || "",
     },
   });
@@ -78,6 +80,8 @@ const ProfileScreen = () => {
     reset({
       firstName: user?.firstName || "",
       surname: user?.surname || "",
+      email: user?.email || "",
+      username: user?.username || "",
       phone: user?.phone || "",
     });
   }, [user, reset]);
@@ -88,20 +92,29 @@ const ProfileScreen = () => {
       await authClient.put("/auth/profile", {
         firstName: data.firstName,
         surname: data.surname,
+        email: data.email,
+        username: data.username,
         phone: data.phone,
       });
       updateUser(data);
       setIsEditing(false);
       Alert.alert("Éxito", "Perfil actualizado correctamente");
-    } catch {
-      Alert.alert("Error", "No se pudo actualizar el perfil");
+    } catch (err) {
+      const msg = err.response?.data?.message || "No se pudo actualizar el perfil";
+      Alert.alert("Error", msg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    reset({ firstName: user?.firstName || "", surname: user?.surname || "", phone: user?.phone || "" });
+    reset({
+      firstName: user?.firstName || "",
+      surname: user?.surname || "",
+      email: user?.email || "",
+      username: user?.username || "",
+      phone: user?.phone || "",
+    });
     setIsEditing(false);
   };
 
@@ -163,10 +176,50 @@ const ProfileScreen = () => {
               />
               <Controller
                 control={control}
+                name="email"
+                rules={{
+                  required: "El correo es obligatorio",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Correo inválido",
+                  },
+                }}
+                render={({ field: { onChange, value, onBlur } }) => (
+                  <Input
+                    label="Correo electrónico"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email?.message}
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="username"
+                rules={{
+                  required: "El usuario es obligatorio",
+                  minLength: { value: 2, message: "Mín. 2 caracteres" },
+                }}
+                render={({ field: { onChange, value, onBlur } }) => (
+                  <Input
+                    label="Usuario"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    autoCapitalize="none"
+                    error={errors.username?.message}
+                  />
+                )}
+              />
+              <Controller
+                control={control}
                 name="phone"
                 render={({ field: { onChange, value, onBlur } }) => (
                   <Input
-                    label="Teléfono"
+                    label="Teléfono (opcional)"
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
